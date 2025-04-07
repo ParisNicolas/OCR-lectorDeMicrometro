@@ -1,16 +1,246 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width">
-  <title>replit</title>
-  <link href="style.css" rel="stylesheet" type="text/css" />
+  <meta charset="UTF-8">
+  <title>OCR con zona de captura</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
 </head>
+<body class="bg-gray-100 p-4 font-sans">
 
-<body>
-  Hello world
-  <script src="script.js"></script>
+  <div class="flex flex-col w-full max-w-md mx-auto">
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+      <!-- Vista de cámara -->
+      <div id="video-container" class="relative bg-black w-full h-64 flex items-center justify-center">
+        <video id="video" class="absolute w-full h-full object-cover" autoplay playsinline></video>
+
+        <!-- Zona de recorte editable (movible y redimensionable) -->
+        <div id="crop-area"
+             class="absolute border-2 border-yellow-400 bg-yellow-200 bg-opacity-20 resize rounded"
+             style="top: 40px; left: 40px; width: 160px; height: 80px; cursor: move; overflow: auto; z-index: 20;">
+        </div>
+
+        <!-- Overlay con texto OCR -->
+        <div id="overlayText" class="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-lg font-bold z-30">
+          ...
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+      <!-- Info del proceso -->
+      <div class="p-4">
+        <div class="flex justify-between items-center mb-4">
+          <div class="text-xl font-bold">Chapa: <span id="chapa">24</span></div>
+          <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">Galvanizado</div>
+        </div>
+
+        <div class="bg-gray-100 p-3 rounded-lg mb-4">
+          <div class="flex justify-between mb-2">
+            <span class="text-gray-600">Lecturas:</span>
+            <span id="lecturas" class="font-mono">0/6</span>
+          </div>
+          <div class="flex justify-between mb-2">
+            <span class="text-gray-600">Promedio:</span>
+            <span id="promedio" class="font-mono font-bold">-</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">Desviación:</span>
+            <span id="desviacion" class="font-mono">-</span>
+          </div>
+        </div>
+        <!-- Lista dinámica de lecturas -->
+        <div id="listaLecturas" class="flex flex-wrap gap-2 mb-4"></div>
+
+        <!-- Botones -->
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="setTipo('B')" class="bg-gray-200 p-3 rounded-lg flex flex-col items-center">
+            <div class="text-sm">Galvanizado</div>
+            <div class="font-bold">G</div>
+          </button>
+          <button onclick="setTipo('C')" class="bg-gray-200 p-3 rounded-lg flex flex-col items-center">
+            <div class="text-sm">Base</div>
+            <div class="font-bold">B</div>
+          </button>
+          <button onclick="cambiarChapa(-1)" class="bg-gray-200 p-3 rounded-lg flex flex-col items-center">
+            <div class="text-sm">-1</div>
+            <div class="font-bold">↓</div>
+          </button>
+          <button onclick="cambiarChapa(1)" class="bg-gray-200 p-3 rounded-lg flex flex-col items-center">
+            <div class="text-sm">+1</div>
+            <div class="font-bold">↑</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra inferior -->
+    <div class="mt-4 bg-white rounded-lg shadow-md p-3 flex justify-around">
+      <button class="p-2 text-blue-600"><div class="flex flex-col items-center">📊<div class="text-xs">Stats</div></div></button>
+      <button onclick="capturarYLeer()" class="p-2 text-blue-600"><div class="flex flex-col items-center">📷<div class="text-xs">Capture</div></div></button>
+      <button class="p-2 text-blue-600"><div class="flex flex-col items-center">💾<div class="text-xs">Export</div></div></button>
+      <button class="p-2 text-blue-600"><div class="flex flex-col items-center">⚙️<div class="text-xs">Settings</div></div></button>
+    </div>
+  </div>
+
+  <!-- Canvas oculto para recortar -->
+  <canvas id="canvas" width="400" height="300" class="hidden"></canvas>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const overlayText = document.getElementById('overlayText');
+    const ctx = canvas.getContext('2d');
+    const listaLecturas = document.getElementById('listaLecturas');
+    const videoContainer = document.getElementById('video-container');
+
+    let cantidadLecturas = 6;
+    let chapa = 24, lecturas = [], tipo = 'G';
+    let resultados = [];
+    
+    const cropArea = document.getElementById('crop-area');
+    let isDragging = false;
+    let startX, startY, initialX, initialY;
+    
+
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(stream => video.srcObject = stream)
+    .catch(err => alert('Error al acceder a la cámara'));
+    
+
+    function capturarYLeer() {
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      canvas.width = vw;
+      canvas.height = vh;
+
+      ctx.drawImage(video, 0, 0, vw, vh);
+
+      // Coordenadas relativas de la zona de recorte
+      const cropRect = cropArea.getBoundingClientRect();
+      const videoRect = video.getBoundingClientRect();
+
+      // Convertir de px de pantalla a coordenadas del canvas/video
+      const scaleX = vw / videoRect.width;
+      const scaleY = vh / videoRect.height;
+
+      const cropX = (cropRect.left - videoRect.left) * scaleX;
+      const cropY = (cropRect.top - videoRect.top) * scaleY;
+      const cropW = cropRect.width * scaleX;
+      const cropH = cropRect.height * scaleY;
+
+      const cropped = ctx.getImageData(cropX, cropY, cropW, cropH);
+
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = cropW;
+      tempCanvas.height = cropH;
+      tempCanvas.getContext('2d').putImageData(cropped, 0, 0);
+
+      overlayText.textContent = "Procesando...";
+
+      Tesseract.recognize(
+        tempCanvas,
+        'eng',
+        {
+          logger: m => console.log(m),
+          tessedit_char_whitelist: '0123456789.'
+        }
+      ).then(({ data: { text } }) => {
+        const value = parseFloat(text.replace(/[^\d.]/g, ''));
+        if (!isNaN(value)) {
+          lecturas.push(value);
+          actualizarStats();
+          overlayText.textContent = `${value.toFixed(1)} μ`;
+        } else {
+          overlayText.textContent = "No detectado";
+        }
+      });
+    }
+
+
+    function actualizarStats() {
+      if (lecturas.length === 0) {
+        document.getElementById('lecturas').textContent = `0/${cantidadLecturas}`;
+        document.getElementById('promedio').textContent = `-`;
+        document.getElementById('desviacion').textContent = `-`;
+        listaLecturas.innerHTML = '';
+        return;
+      }
+
+      let promedio = lecturas.reduce((a, b) => a + b, 0) / lecturas.length;
+      let desviacion = Math.sqrt(lecturas.map(x => (x - promedio) ** 2).reduce((a, b) => a + b, 0) / lecturas.length);
+
+      document.getElementById('lecturas').textContent = `${lecturas.length}/${cantidadLecturas}`;
+      document.getElementById('promedio').textContent = `${promedio.toFixed(1)} μ`;
+      document.getElementById('desviacion').textContent = `±${desviacion.toFixed(1)} μ`;
+
+      listaLecturas.innerHTML = '';
+      lecturas.forEach((val, idx) => {
+        const li = document.createElement('li');
+        li.textContent = `${idx + 1}. ${val.toFixed(1)} μ`;
+        listaLecturas.appendChild(li);
+      });
+
+      // Cambio de tipo y chapa si se completaron las lecturas
+      if (lecturas.length >= cantidadLecturas) {
+        resultados[tipo] = promedio;
+        if (tipo === 'B') {
+          tipo = 'G';
+          lecturas = [];
+          chapa++;
+        } else if (tipo === 'G') {
+          tipo = 'B';
+          lecturas = [];
+        }
+        document.getElementById('chapa').textContent = chapa;
+        actualizarStats();
+      }
+    }
+
+    function cambiarChapa(delta) {
+      chapa += delta;
+      document.getElementById('chapa').textContent = chapa;
+      lecturas = [];
+      actualizarStats();
+    }
+
+    function setTipo(nuevoTipo) {
+      tipo = nuevoTipo;
+      console.log("Tipo:", tipo);
+    }
+
+
+    
+
+    cropArea.addEventListener('mousedown', (e) => {
+      // Solo mover si no se está redimensionando (resizer = esquina)
+      if (e.target !== cropArea || e.offsetX > cropArea.clientWidth - 20 && e.offsetY > cropArea.clientHeight - 20) return;
+
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      const rect = cropArea.getBoundingClientRect();
+      const containerRect = document.getElementById('video-container').getBoundingClientRect();
+      initialX = rect.left - containerRect.left;
+      initialY = rect.top - containerRect.top;
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+
+      cropArea.style.left = `${initialX + dx}px`;
+      cropArea.style.top = `${initialY + dy}px`;
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+  </script>
 </body>
-
 </html>
