@@ -85,8 +85,12 @@
     </div>
   </div>
 
-  <!-- Canvas oculto para recortar -->
-  <canvas id="canvas" width="400" height="300" class="hidden"></canvas>
+  <!-- Canvas para previsualización -->
+  <div class="mt-4 bg-white rounded-lg shadow-md p-4">
+    <div class="text-sm mb-2">Preview:</div>
+    <canvas id="canvas" width="400" height="300" class="w-full"></canvas>
+    <canvas id="previewCanvas" width="400" height="300" class="w-full mt-2 border"></canvas>
+  </div>
 
   <script>
     const video = document.getElementById('video');
@@ -136,7 +140,35 @@
       const tempCanvas = document.createElement('canvas');
       tempCanvas.width = cropW;
       tempCanvas.height = cropH;
-      tempCanvas.getContext('2d').putImageData(cropped, 0, 0);
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCtx.putImageData(cropped, 0, 0);
+
+      // Preprocessing for better OCR
+      const imageData = tempCtx.getImageData(0, 0, cropW, cropH);
+      const data = imageData.data;
+      
+      // Convert to grayscale and increase contrast
+      for (let i = 0; i < data.length; i += 4) {
+        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        // Increase contrast
+        const contrast = 1.5; // Adjust this value to increase/decrease contrast
+        const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+        const value = factor * (avg - 128) + 128;
+        
+        // Threshold
+        const threshold = 128;
+        const final = value > threshold ? 255 : 0;
+        
+        data[i] = data[i + 1] = data[i + 2] = final;
+      }
+      
+      tempCtx.putImageData(imageData, 0, 0);
+      
+      // Show preview
+      const previewCanvas = document.getElementById('previewCanvas');
+      previewCanvas.width = cropW;
+      previewCanvas.height = cropH;
+      previewCanvas.getContext('2d').drawImage(tempCanvas, 0, 0);
 
       overlayText.textContent = "Procesando...";
 
