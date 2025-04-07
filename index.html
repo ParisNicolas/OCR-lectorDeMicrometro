@@ -85,12 +85,11 @@
     </div>
   </div>
 
-  <!-- Canvas para previsualización -->
-  <div class="mt-4 bg-white rounded-lg shadow-md p-4">
-    <div class="text-sm mb-2">Preview:</div>
-    <canvas id="canvas" width="400" height="300" class="w-full"></canvas>
-    <canvas id="previewCanvas" width="400" height="300" class="w-full mt-2 border"></canvas>
-  </div>
+  <!-- Hidden canvas for processing -->
+  <canvas id="canvas" class="hidden"></canvas>
+  
+  <!-- Preview canvas in video container -->
+  <canvas id="previewCanvas" class="absolute bottom-2 left-2 z-30 border border-white rounded shadow-lg" style="width: 100px; height: 50px;"></canvas>
 
   <script>
     const video = document.getElementById('video');
