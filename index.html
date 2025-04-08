@@ -27,6 +27,14 @@
 
         <!-- Preview canvas in video container -->
         <canvas id="previewCanvas" class="absolute bottom-1 left-1 z-30 border border-white rounded shadow-lg" style="width: 100px; height: 50px;"></canvas>
+
+        <!-- Size controls -->
+        <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 p-2 flex gap-2 items-center text-white text-sm">
+          <label>Width:</label>
+          <input type="range" id="widthSlider" min="50" max="300" value="160" class="flex-1">
+          <label>Height:</label>
+          <input type="range" id="heightSlider" min="50" max="200" value="80" class="flex-1">
+        </div>
       </div>
     </div>
   </div>
@@ -99,6 +107,9 @@
     const canvas = document.getElementById('canvas');
     const overlayText = document.getElementById('overlayText');
     const ctx = canvas.getContext('2d');
+    const widthSlider = document.getElementById('widthSlider');
+    const heightSlider = document.getElementById('heightSlider');
+    const cropArea = document.getElementById('crop-area');
 
     //Variables de estado
     const cantidadLecturas = 6;
@@ -107,15 +118,14 @@
     let lecturas = [{'G':[], 'B':[]}];
 
     // Drag and drop para la zona de recorte
-    const cropArea = document.getElementById('crop-area');
     let isDragging = false;
     let startX, startY, initialX, initialY;
-    
+
     // Acceder a la cámara
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
     .then(stream => video.srcObject = stream)
     .catch(err => alert('Error al acceder a la cámara'));
-    
+
     // Reconocimiento de texto
     function capturarYLeer() {
       const vw = video.videoWidth;
@@ -149,7 +159,7 @@
       // Preprocessing for better OCR
       const imageData = tempCtx.getImageData(0, 0, cropW, cropH);
       const data = imageData.data;
-      
+
       // Convert to grayscale and increase contrast
       for (let i = 0; i < data.length; i += 4) {
         const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
@@ -157,16 +167,16 @@
         const contrast = 1.5; // Adjust this value to increase/decrease contrast
         const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
         const value = factor * (avg - 128) + 128;
-        
+
         // Threshold
         const threshold = 128;
         const final = value > threshold ? 255 : 0;
-        
+
         data[i] = data[i + 1] = data[i + 2] = final;
       }
-      
+
       tempCtx.putImageData(imageData, 0, 0);
-      
+
       // Show preview
       const previewCanvas = document.getElementById('previewCanvas');
       previewCanvas.width = cropW;
@@ -220,7 +230,7 @@
     function checkAndChangeType(){
       //Promediar y actualizar resultados
       resultados[chapa-1][tipo] = lecturas[chapa-1][tipo].reduce((a, b) => a + b, 0) / lecturas[chapa-1][tipo].length;
-      
+
       if (lecturas[chapa-1][tipo].length === cantidadLecturas){
         if (tipo === 'G'){
           setTipo('B');
@@ -230,12 +240,12 @@
       }
       actualizarStats();
     }
-      
+
     function cambiarChapa(delta) {
       if (chapa+delta < 1) return; //Limite inferior
       chapa += delta;
       document.getElementById('chapa').textContent = chapa;
-      
+
       // Inicializar el objeto de resultados para la nueva chapa si no existe
       if (!resultados[chapa-1]) {
         resultados[chapa-1] = {'G':undefined, 'B':undefined};
@@ -248,7 +258,7 @@
 
     function setTipo(nuevoTipo) {
       tipo = nuevoTipo;
-      
+
       element = document.getElementById('tipo');
       if (tipo === 'G'){
         element.textContent = 'Galvanizado';
@@ -291,6 +301,39 @@
 
     document.addEventListener('mouseup', () => {
       isDragging = false;
+    });
+
+    widthSlider.addEventListener('input', () => {
+      cropArea.style.width = widthSlider.value + 'px';
+    });
+
+    heightSlider.addEventListener('input', () => {
+      cropArea.style.height = heightSlider.value + 'px';
+    });
+
+    //Touch event listeners for mobile
+    cropArea.addEventListener('touchstart', (e) => {
+        if (e.target !== cropArea || e.touches[0].offsetX > cropArea.clientWidth - 20 && e.touches[0].offsetY > cropArea.clientHeight - 20) return;
+        isDragging = true;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        const rect = cropArea.getBoundingClientRect();
+        const containerRect = document.getElementById('video-container').getBoundingClientRect();
+        initialX = rect.left - containerRect.left;
+        initialY = rect.top - containerRect.top;
+        e.preventDefault();
+    });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        const dx = e.touches[0].clientX - startX;
+        const dy = e.touches[0].clientY - startY;
+        cropArea.style.left = `${initialX + dx}px`;
+        cropArea.style.top = `${initialY + dy}px`;
+    });
+
+    document.addEventListener('touchend', () => {
+        isDragging = false;
     });
   </script>
 </body>
