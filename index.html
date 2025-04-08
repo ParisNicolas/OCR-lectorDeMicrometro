@@ -115,7 +115,7 @@
   </div>
 
   <!-- Hidden canvas for processing -->
-  <canvas id="canvas"></canvas>
+  <canvas id="canvas" class="hidden"></canvas>
 
 
   <script>
@@ -161,18 +161,10 @@
       const scaleX = vw / videoRect.width;
       const scaleY = vh / videoRect.height;
 
-      // Get relative position within video container
-      const containerRect = document.getElementById('video-container').getBoundingClientRect();
-      const relativeX = (cropRect.left - videoRect.left) / videoRect.width;
-      const relativeY = (cropRect.top - videoRect.top) / videoRect.height;
-      const relativeW = cropRect.width / videoRect.width;
-      const relativeH = cropRect.height / videoRect.height;
-
-      // Convert to actual video coordinates
-      const cropX = relativeX * vw;
-      const cropY = relativeY * vh;
-      const cropW = relativeW * vw;
-      const cropH = relativeH * vh;
+      const cropX = (cropRect.left - videoRect.left) * scaleX;
+      const cropY = (cropRect.top - videoRect.top) * scaleY;
+      const cropW = cropRect.width * scaleX;
+      const cropH = cropRect.height * scaleY;
 
       const cropped = ctx.getImageData(cropX, cropY, cropW, cropH);
 
@@ -181,17 +173,6 @@
       tempCanvas.height = cropH;
       const tempCtx = tempCanvas.getContext('2d');
       tempCtx.putImageData(cropped, 0, 0);
-
-      // Maintain aspect ratio in preview
-      const previewCanvas = document.getElementById('previewCanvas');
-      const MAX_PREVIEW_WIDTH = 100;
-      const MAX_PREVIEW_HEIGHT = 50;
-      const scale = Math.min(MAX_PREVIEW_WIDTH/cropW, MAX_PREVIEW_HEIGHT/cropH);
-      
-      previewCanvas.width = cropW;
-      previewCanvas.height = cropH;
-      previewCanvas.style.width = (cropW * scale) + 'px';
-      previewCanvas.style.height = (cropH * scale) + 'px';
 
       // Preprocessing for better OCR
       const imageData = tempCtx.getImageData(0, 0, cropW, cropH);
@@ -257,8 +238,8 @@
       listaLecturas.innerHTML = '';
       lecturas[chapa-1][tipo].forEach((val, idx) => {
         const li = document.createElement('spam');
-        li.textContent = `${idx + 1}. ${val.toFixed(1)} μ`;
-        li.classList.add('bg-gray-100', 'p-2', 'rounded-lg', 'text-gray-800'); // Tailwind clases para estilo
+        li.textContent = `${val.toFixed(1)} μ`;
+        li.classList.add('bg-green-100', 'p-1', 'rounded-lg', 'text-gray-800'); // Tailwind clases para estilo
         listaLecturas.appendChild(li);
       });
     }
