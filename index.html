@@ -31,15 +31,26 @@
         <!-- Preview canvas in video container -->
         <canvas id="previewCanvas" class="absolute bottom-1 left-1 z-30 border border-white rounded shadow-lg" style="width: 100px; height: 50px;"></canvas>
 
-        <!-- Size controls -->
-        <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 p-2 flex flex-col gap-1 text-white text-sm">
-          <div class="flex items-center gap-2">
-            <label class="w-16">Width:</label>
-            <input type="range" id="widthSlider" min="50" max="300" value="160" class="flex-1">
+        </div>
+    </div>
+
+    <!-- Controls panel -->
+    <div class="mt-4 bg-white rounded-lg shadow-md overflow-hidden">
+      <button onclick="toggleControls()" class="w-full bg-gray-50 p-3 text-left font-medium flex justify-between items-center">
+        <span>Selection Controls</span>
+        <span id="controlsArrow">▼</span>
+      </button>
+      <div id="controlsPanel" class="p-4">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Width</label>
+            <input type="range" id="widthSlider" min="50" max="300" value="160" class="w-full">
+            <div class="text-xs text-gray-500 mt-1" id="widthValue">160px</div>
           </div>
-          <div class="flex items-center gap-2">
-            <label class="w-16">Height:</label>
-            <input type="range" id="heightSlider" min="50" max="200" value="80" class="flex-1">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Height</label>
+            <input type="range" id="heightSlider" min="50" max="200" value="80" class="w-full">
+            <div class="text-xs text-gray-500 mt-1" id="heightValue">80px</div>
           </div>
         </div>
       </div>
@@ -316,6 +327,23 @@
 
     heightSlider.addEventListener('input', () => {
       cropArea.style.height = heightSlider.value + 'px';
+    });
+
+    // Controls panel toggle
+    function toggleControls() {
+      const panel = document.getElementById('controlsPanel');
+      const arrow = document.getElementById('controlsArrow');
+      panel.classList.toggle('hidden');
+      arrow.textContent = panel.classList.contains('hidden') ? '▼' : '▲';
+    }
+
+    // Update value displays
+    widthSlider.addEventListener('input', () => {
+      document.getElementById('widthValue').textContent = widthSlider.value + 'px';
+    });
+
+    heightSlider.addEventListener('input', () => {
+      document.getElementById('heightValue').textContent = heightSlider.value + 'px';
     });
 
     //Touch event listeners for mobile
