@@ -428,6 +428,70 @@
     document.addEventListener('touchend', () => {
         isDragging = false;
     });
+
+    ///////////////////////////////////////////SONIDO////////////////////////
+    let audioContext;
+    let analyser;
+    let source;
+    let dataArray;
+    let detecting = false;
+
+    async function iniciarDeteccion() {
+      if (detecting) return;
+
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      source = audioContext.createMediaStreamSource(stream);
+
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 2048;
+
+      source.connect(analyser);
+
+      const bufferLength = analyser.frequencyBinCount;
+      dataArray = new Uint8Array(bufferLength);
+
+      detecting = true;
+      detectarPitido();
+    }
+
+    function detectarPitido() {
+      if (!detecting) return;
+
+      analyser.getByteFrequencyData(dataArray);
+
+      // Convertimos frecuencia binaria a Hz
+      const sampleRate = audioContext.sampleRate;
+      const binSize = sampleRate / analyser.fftSize;
+
+      // Ejemplo: buscamos un pico entre 3900 y 4100 Hz
+      const targetMin = Math.floor(3900 / binSize);
+      const targetMax = Math.ceil(4100 / binSize);
+
+      let maxAmp = 0;
+      for (let i = targetMin; i <= targetMax; i++) {
+        if (dataArray[i] > maxAmp) {
+          maxAmp = dataArray[i];
+        }
+      }
+
+      if (maxAmp > 180) { // umbral, se puede calibrar
+        console.log("Pitido detectado, capturando...");
+        capturarYLeer();
+        // evitar capturas múltiples seguidas
+        detecting = false;
+        setTimeout(() => {
+          detecting = true;
+          detectarPitido();
+        }, 3000); // espera 3 segundos para el próximo pitido
+        return;
+      }
+
+      requestAnimationFrame(detectarPitido);
+    }
+
+
+    
   </script>
 </body>
 </html>
