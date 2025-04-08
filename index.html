@@ -225,12 +225,13 @@
       ).then(({ data: { text } }) => {
         const value = parseFloat(text.replace(/[^\d.]/g, ''));
         if (!isNaN(value)) {
-          if (value < 30.0 && value > 1.0){
+          if (value < 30.0 && value > 1.0 && (!fromTimer || value !== lastValue)){
             lecturas[chapa-1][tipo].push(value);
             checkAndChangeType();
             overlayText.textContent = `${value.toFixed(1)} μ`;
-          }else{
-            overlayText.textContent = "Fuera de rango";
+            lastValue = value;
+          } else {
+            overlayText.textContent = fromTimer ? "Duplicado" : "Fuera de rango";
           }
         } else {
           overlayText.textContent = "No detectado";
@@ -390,19 +391,7 @@
       }
     });
 
-    // Modify the overlay text handler to skip duplicate values
-    if (!isNaN(value)) {
-      if (value < 30.0 && value > 1.0 && (!fromTimer || value !== lastValue)){
-        lecturas[chapa-1][tipo].push(value);
-        checkAndChangeType();
-        overlayText.textContent = `${value.toFixed(1)} μ`;
-        lastValue = value;
-      } else {
-        overlayText.textContent = fromTimer ? "Duplicado" : "Fuera de rango";
-      }
-    } else {
-      overlayText.textContent = "No detectado";
-    }
+    
 
     //Touch event listeners for mobile
     cropArea.addEventListener('touchstart', (e) => {
