@@ -237,8 +237,8 @@
       listaLecturas.innerHTML = '';
       lecturas[chapa-1][tipo].forEach((val, idx) => {
         const li = document.createElement('spam');
-        li.textContent = `${val.toFixed(1)} μ`;
-        li.classList.add('bg-green-100', 'px-1', 'py-0.5', 'text-xs', 'rounded', 'text-gray-800'); // Tailwind clases para estilo
+        li.textContent = `${val.toFixed(1)}`;
+        li.classList.add('bg-gray-200', 'px-1', 'py-0.5', 'text-s', 'rounded', 'text-gray-800'); // Tailwind clases para estilo
         listaLecturas.appendChild(li);
       });
     }
