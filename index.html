@@ -37,7 +37,7 @@
     <!-- Controls panel -->
     <div class="mt-4 bg-white rounded-lg shadow-md overflow-hidden">
       <button onclick="toggleControls()" class="w-full bg-gray-50 p-3 text-left font-medium flex justify-between items-center">
-        <span>Selection Controls</span>
+        <span>Config</span>
         <span id="controlsArrow">▼</span>
       </button>
       <div id="controlsPanel" class="p-4">
@@ -51,6 +51,17 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">Height</label>
             <input type="range" id="heightSlider" min="50" max="200" value="80" class="w-full">
             <div class="text-xs text-gray-500 mt-1" id="heightValue">80px</div>
+          </div>
+          <div class="border-t pt-4">
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-sm font-medium text-gray-700">Auto Capture</label>
+              <input type="checkbox" id="timerEnabled" class="h-4 w-4 text-blue-600">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Interval (seconds)</label>
+              <input type="range" id="timerSlider" min="1" max="10" value="2" class="w-full">
+              <div class="text-xs text-gray-500 mt-1" id="timerValue">2s</div>
+            </div>
           </div>
         </div>
       </div>
@@ -133,6 +144,8 @@
     let chapa = 1, tipo = 'G';
     let resultados = [{'G':undefined, 'B':0.0}];
     let lecturas = [{'G':[], 'B':[]}];
+    let timerInterval = null;
+    let lastValue = null;
 
     // Drag and drop para la zona de recorte
     let isDragging = false;
@@ -144,7 +157,7 @@
     .catch(err => alert('Error al acceder a la cámara'));
 
     // Reconocimiento de texto
-    function capturarYLeer() {
+    function capturarYLeer(fromTimer = false) {
       const vw = video.videoWidth;
       const vh = video.videoHeight;
       canvas.width = vw;
@@ -344,6 +357,52 @@
     heightSlider.addEventListener('input', () => {
       document.getElementById('heightValue').textContent = heightSlider.value + 'px';
     });
+
+    // Timer controls
+    const timerSlider = document.getElementById('timerSlider');
+    const timerEnabled = document.getElementById('timerEnabled');
+
+    timerSlider.addEventListener('input', () => {
+      document.getElementById('timerValue').textContent = timerSlider.value + 's';
+    });
+
+    function toggleTimer() {
+      if (timerEnabled.checked) {
+        if (!timerInterval) {
+          timerInterval = setInterval(() => {
+            capturarYLeer(true);
+          }, timerSlider.value * 1000);
+        }
+      } else {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+      }
+    }
+
+    timerEnabled.addEventListener('change', toggleTimer);
+    timerSlider.addEventListener('change', () => {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        toggleTimer();
+      }
+    });
+
+    // Modify the overlay text handler to skip duplicate values
+    if (!isNaN(value)) {
+      if (value < 30.0 && value > 1.0 && (!fromTimer || value !== lastValue)){
+        lecturas[chapa-1][tipo].push(value);
+        checkAndChangeType();
+        overlayText.textContent = `${value.toFixed(1)} μ`;
+        lastValue = value;
+      } else {
+        overlayText.textContent = fromTimer ? "Duplicado" : "Fuera de rango";
+      }
+    } else {
+      overlayText.textContent = "No detectado";
+    }
 
     //Touch event listeners for mobile
     cropArea.addEventListener('touchstart', (e) => {
