@@ -24,6 +24,9 @@
         <div id="overlayText" class="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-lg font-bold z-30">
           ...
         </div>
+
+        <!-- Preview canvas in video container -->
+        <canvas id="previewCanvas" class="absolute bottom-1 left-1 z-30 border border-white rounded shadow-lg" style="width: 100px; height: 50px;"></canvas>
       </div>
     </div>
   </div>
@@ -33,8 +36,8 @@
       <!-- Info del proceso -->
       <div class="p-4">
         <div class="flex justify-between items-center mb-4">
-          <div class="text-xl font-bold">Chapa: <span id="chapa">24</span></div>
-          <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">Galvanizado</div>
+          <div class="text-xl font-bold">Chapa: <span id="chapa">1</span></div>
+          <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm" id="tipo">Galvanizado</div>
         </div>
 
         <div class="bg-gray-100 p-3 rounded-lg mb-4">
@@ -56,11 +59,11 @@
 
         <!-- Botones -->
         <div class="grid grid-cols-2 gap-2">
-          <button onclick="setTipo('B')" class="bg-gray-200 p-3 rounded-lg flex flex-col items-center">
+          <button onclick="setTipo('G')" class="bg-gray-200 p-3 rounded-lg flex flex-col items-center">
             <div class="text-sm">Galvanizado</div>
             <div class="font-bold">G</div>
           </button>
-          <button onclick="setTipo('C')" class="bg-gray-200 p-3 rounded-lg flex flex-col items-center">
+          <button onclick="setTipo('B')" class="bg-gray-200 p-3 rounded-lg flex flex-col items-center">
             <div class="text-sm">Base</div>
             <div class="font-bold">B</div>
           </button>
@@ -87,9 +90,7 @@
 
   <!-- Hidden canvas for processing -->
   <canvas id="canvas" class="hidden"></canvas>
-  
-  <!-- Preview canvas in video container -->
-  <canvas id="previewCanvas" class="absolute bottom-2 left-2 z-30 border border-white rounded shadow-lg" style="width: 100px; height: 50px;"></canvas>
+
 
   <script>
     const video = document.getElementById('video');
@@ -97,11 +98,11 @@
     const overlayText = document.getElementById('overlayText');
     const ctx = canvas.getContext('2d');
     const listaLecturas = document.getElementById('listaLecturas');
-    const videoContainer = document.getElementById('video-container');
 
-    let cantidadLecturas = 6;
-    let chapa = 24, lecturas = [], tipo = 'G';
-    let resultados = [];
+    const cantidadLecturas = 6;
+    let chapa = 1, tipo = 'Galvanizado';
+    let resultados = [(0.0,0.0)];
+    let lecturas = [([],[])];
     
     const cropArea = document.getElementById('crop-area');
     let isDragging = false;
@@ -182,6 +183,7 @@
         const value = parseFloat(text.replace(/[^\d.]/g, ''));
         if (!isNaN(value)) {
           lecturas.push(value);
+          checkAndChangeType();
           actualizarStats();
           overlayText.textContent = `${value.toFixed(1)} μ`;
         } else {
@@ -213,37 +215,51 @@
         li.textContent = `${idx + 1}. ${val.toFixed(1)} μ`;
         listaLecturas.appendChild(li);
       });
-
-      // Cambio de tipo y chapa si se completaron las lecturas
-      if (lecturas.length >= cantidadLecturas) {
-        resultados[tipo] = promedio;
-        if (tipo === 'B') {
-          tipo = 'G';
-          lecturas = [];
-          chapa++;
-        } else if (tipo === 'G') {
-          tipo = 'B';
-          lecturas = [];
-        }
-        document.getElementById('chapa').textContent = chapa;
-        actualizarStats();
-      }
     }
 
+    function checkAndChangeType(){
+      if (lecturas.length >= cantidadLecturas){
+        if (tipo === 'G'){
+          setTipo('B');
+        }else{
+          cambiarChapa(1);
+        }
+      }
+    }
+      
     function cambiarChapa(delta) {
+      if (chapa+delta < 1) return;
       chapa += delta;
       document.getElementById('chapa').textContent = chapa;
-      lecturas = [];
-      actualizarStats();
+      
+      // Inicializar el objeto de resultados para la nueva chapa si no existe
+      if (!resultados[chapa-1]) {
+        resultados[chapa-1] = {'G':0.0, 'B':0.0};
+      }
+
+      // Actualizar la información de tipo y promedio para la chapa actual
+      setTipo('G');
     }
 
     function setTipo(nuevoTipo) {
+      let promedio = resultados[chapa-1][tipo];
+      lecturas = [];
+      
       tipo = nuevoTipo;
-      console.log("Tipo:", tipo);
+      element = document.getElementById('tipo');
+      if (tipo === 'G'){
+        element.textContent = 'Galvanizado';
+        element.classList.remove('bg-green-100', 'text-green-800');
+        element.classList.add('bg-blue-100', 'text-blue-800');
+      }else{
+        element.textContent = 'Base';
+        element.classList.remove('bg-blue-100', 'text-blue-800');
+        element.classList.add('bg-green-100', 'text-green-800');
+      }
     }
 
 
-    
+    actualizarStats();
 
     cropArea.addEventListener('mousedown', (e) => {
       // Solo mover si no se está redimensionando (resizer = esquina)
