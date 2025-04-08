@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
   <meta charset="UTF-8">
   <title>OCR con zona de captura</title>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -8,10 +11,10 @@
 </head>
 <body class="bg-gray-100 p-4 font-sans">
 
-  <div class="flex flex-col w-full max-w-md mx-auto">
+  <div class="flex flex-col w-full max-w-lg mx-auto px-2">
     <div class="bg-white rounded-lg shadow-md overflow-hidden">
       <!-- Vista de cámara -->
-      <div id="video-container" class="relative bg-black w-full h-64 flex items-center justify-center">
+      <div id="video-container" class="relative bg-black w-full aspect-[4/3] flex items-center justify-center">
         <video id="video" class="absolute w-full h-full object-cover" autoplay playsinline></video>
 
         <!-- Zona de recorte editable (movible y redimensionable) -->
@@ -29,11 +32,15 @@
         <canvas id="previewCanvas" class="absolute bottom-1 left-1 z-30 border border-white rounded shadow-lg" style="width: 100px; height: 50px;"></canvas>
 
         <!-- Size controls -->
-        <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 p-2 flex gap-2 items-center text-white text-sm">
-          <label>Width:</label>
-          <input type="range" id="widthSlider" min="50" max="300" value="160" class="flex-1">
-          <label>Height:</label>
-          <input type="range" id="heightSlider" min="50" max="200" value="80" class="flex-1">
+        <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 p-2 flex flex-col gap-1 text-white text-sm">
+          <div class="flex items-center gap-2">
+            <label class="w-16">Width:</label>
+            <input type="range" id="widthSlider" min="50" max="300" value="160" class="flex-1">
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="w-16">Height:</label>
+            <input type="range" id="heightSlider" min="50" max="200" value="80" class="flex-1">
+          </div>
         </div>
       </div>
     </div>
@@ -42,9 +49,9 @@
 
 
       <!-- Info del proceso -->
-      <div class="p-4">
-        <div class="flex justify-between items-center mb-4">
-          <div class="text-xl font-bold">Chapa: <span id="chapa">1</span></div>
+      <div class="p-3">
+        <div class="flex justify-between items-center mb-3">
+          <div class="text-lg font-bold">Chapa: <span id="chapa">1</span></div>
           <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm" id="tipo">Galvanizado</div>
         </div>
 
@@ -66,8 +73,8 @@
         <div id="listaLecturas" class="flex flex-wrap gap-2 mb-4"></div>
 
         <!-- Botones -->
-        <div class="grid grid-cols-2 gap-2">
-          <button onclick="setTipo('G')" class="bg-gray-200 p-3 rounded-lg flex flex-col items-center">
+        <div class="grid grid-cols-2 gap-3">
+          <button onclick="setTipo('G')" class="bg-gray-200 p-4 rounded-lg flex flex-col items-center touch-manipulation">
             <div class="text-sm">Galvanizado</div>
             <div class="font-bold">G</div>
           </button>
