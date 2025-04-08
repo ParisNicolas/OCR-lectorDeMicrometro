@@ -93,27 +93,30 @@
 
 
   <script>
+    // Elementos del DOM
+    const listaLecturas = document.getElementById('listaLecturas');
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const overlayText = document.getElementById('overlayText');
     const ctx = canvas.getContext('2d');
-    const listaLecturas = document.getElementById('listaLecturas');
 
+    //Variables de estado
     const cantidadLecturas = 6;
-    let chapa = 1, tipo = 'Galvanizado';
-    let resultados = [(0.0,0.0)];
-    let lecturas = [([],[])];
-    
+    let chapa = 1, tipo = 'G';
+    let resultados = [{'G':undefined, 'B':0.0}];
+    let lecturas = [{'G':[], 'B':[]}];
+
+    // Drag and drop para la zona de recorte
     const cropArea = document.getElementById('crop-area');
     let isDragging = false;
     let startX, startY, initialX, initialY;
     
-
+    // Acceder a la cámara
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
     .then(stream => video.srcObject = stream)
     .catch(err => alert('Error al acceder a la cámara'));
     
-
+    // Reconocimiento de texto
     function capturarYLeer() {
       const vw = video.videoWidth;
       const vh = video.videoHeight;
@@ -182,59 +185,61 @@
       ).then(({ data: { text } }) => {
         const value = parseFloat(text.replace(/[^\d.]/g, ''));
         if (!isNaN(value)) {
-          lecturas.push(value);
-          checkAndChangeType();
-          actualizarStats();
-          overlayText.textContent = `${value.toFixed(1)} μ`;
+          if (value < 30.0 && value > 1.0){
+            lecturas[chapa-1][tipo].push(value);
+            checkAndChangeType();
+            overlayText.textContent = `${value.toFixed(1)} μ`;
+          }else{
+            overlayText.textContent = "Fuera de rango";
+          }
         } else {
           overlayText.textContent = "No detectado";
         }
       });
     }
 
-
+    // Funciones de actualización de la UI
     function actualizarStats() {
-      if (lecturas.length === 0) {
-        document.getElementById('lecturas').textContent = `0/${cantidadLecturas}`;
-        document.getElementById('promedio').textContent = `-`;
-        document.getElementById('desviacion').textContent = `-`;
-        listaLecturas.innerHTML = '';
-        return;
-      }
+      let promedio = resultados[chapa-1][tipo];
+      let desviacion = Math.sqrt(lecturas[chapa-1][tipo].map(x => (x - promedio) ** 2).reduce((a, b) => a + b, 0) / lecturas[chapa-1][tipo].length);
 
-      let promedio = lecturas.reduce((a, b) => a + b, 0) / lecturas.length;
-      let desviacion = Math.sqrt(lecturas.map(x => (x - promedio) ** 2).reduce((a, b) => a + b, 0) / lecturas.length);
-
-      document.getElementById('lecturas').textContent = `${lecturas.length}/${cantidadLecturas}`;
-      document.getElementById('promedio').textContent = `${promedio.toFixed(1)} μ`;
-      document.getElementById('desviacion').textContent = `±${desviacion.toFixed(1)} μ`;
+      document.getElementById('lecturas').textContent = `${lecturas[chapa-1][tipo].length}/${cantidadLecturas}`;
+      document.getElementById('promedio').textContent = `${promedio ? promedio.toFixed(1):'-'} μ`;
+      document.getElementById('desviacion').textContent = `±${desviacion ? desviacion.toFixed(1):'-'} μ`;
 
       listaLecturas.innerHTML = '';
-      lecturas.forEach((val, idx) => {
-        const li = document.createElement('li');
+      lecturas[chapa-1][tipo].forEach((val, idx) => {
+        const li = document.createElement('spam');
         li.textContent = `${idx + 1}. ${val.toFixed(1)} μ`;
+        li.classList.add('bg-gray-100', 'p-2', 'rounded-lg', 'text-gray-800'); // Tailwind clases para estilo
         listaLecturas.appendChild(li);
       });
     }
 
+    // Funciones de cambio de chapa y tipo
     function checkAndChangeType(){
-      if (lecturas.length >= cantidadLecturas){
+      //Promediar y actualizar resultados
+      resultados[chapa-1][tipo] = lecturas[chapa-1][tipo].reduce((a, b) => a + b, 0) / lecturas[chapa-1][tipo].length;
+      
+      if (lecturas[chapa-1][tipo].length === cantidadLecturas){
         if (tipo === 'G'){
           setTipo('B');
         }else{
           cambiarChapa(1);
         }
       }
+      actualizarStats();
     }
       
     function cambiarChapa(delta) {
-      if (chapa+delta < 1) return;
+      if (chapa+delta < 1) return; //Limite inferior
       chapa += delta;
       document.getElementById('chapa').textContent = chapa;
       
       // Inicializar el objeto de resultados para la nueva chapa si no existe
       if (!resultados[chapa-1]) {
-        resultados[chapa-1] = {'G':0.0, 'B':0.0};
+        resultados[chapa-1] = {'G':undefined, 'B':undefined};
+        lecturas[chapa-1] = {'G':[], 'B':[]};
       }
 
       // Actualizar la información de tipo y promedio para la chapa actual
@@ -242,10 +247,8 @@
     }
 
     function setTipo(nuevoTipo) {
-      let promedio = resultados[chapa-1][tipo];
-      lecturas = [];
-      
       tipo = nuevoTipo;
+      
       element = document.getElementById('tipo');
       if (tipo === 'G'){
         element.textContent = 'Galvanizado';
@@ -256,6 +259,7 @@
         element.classList.remove('bg-blue-100', 'text-blue-800');
         element.classList.add('bg-green-100', 'text-green-800');
       }
+      actualizarStats();
     }
 
 
