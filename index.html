@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
   <meta charset="UTF-8">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2196f3" />
+
   <title>OCR con zona de captura</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
@@ -33,6 +36,7 @@
 
         </div>
     </div>
+    <button onclick="iniciarDeteccion()">Iniciar detección</button>
 
     <!-- Controls panel -->
     <div class="mt-4 bg-white rounded-lg shadow-md overflow-hidden">
@@ -482,5 +486,6 @@
 
     
   </script>
+  <script src="app.js"></script>
 </body>
 </html>
