@@ -136,10 +136,10 @@
 
     <!-- Barra inferior -->
     <div class="mt-4 bg-white rounded-lg shadow-md p-3 flex justify-around">
-      <button class="p-2 text-blue-600"><div class="flex flex-col items-center">📊<div class="text-xs">Stats</div></div></button>
-      <button onclick="capturarYLeer()" class="p-2 text-blue-600"><div class="flex flex-col items-center">📷<div class="text-xs">Capture</div></div></button>
-      <button class="p-2 text-blue-600"><div class="flex flex-col items-center">💾<div class="text-xs">Export</div></div></button>
-      <button class="p-2 text-blue-600"><div class="flex flex-col items-center">⚙️<div class="text-xs">Settings</div></div></button>
+      <button onclick="cancelarUltimaMedicion()" class="p-2 text-blue-600"><div class="flex flex-col items-center">↩️<div class="text-xs">Cancelar</div></div></button>
+      <button onclick="borrarDatosChapa()" class="p-2 text-blue-600"><div class="flex flex-col items-center">🔄<div class="text-xs">Releer</div></div></button>
+      <button onclick="confirmarReiniciar()" class="p-2 text-blue-600"><div class="flex flex-col items-center">🗑️<div class="text-xs">Reiniciar</div></div></button>
+      <button onclick="exportarCSV()" class="p-2 text-blue-600"><div class="flex flex-col items-center">📥<div class="text-xs">Exportar</div></div></button>
     </div>
   </div>
 
@@ -415,15 +415,101 @@
       if (feature === 'timer') {
         toggleTimer();
       } else if (feature === 'sound') {
-        // Implement sound activation logic here
         if (soundEnabled.checked) {
           iniciarDeteccion();
         } else {
-          detecting = false; // Stop sound detection
+          detecting = false;
         }
       }
     }
 
+    // Funciones para los nuevos botones
+    function cancelarUltimaMedicion() {
+      if (lecturas[chapa-1][tipo].length > 0) {
+        lecturas[chapa-1][tipo].pop();
+        actualizarStats();
+        guardarEnCache();
+      }
+    }
+
+    function borrarDatosChapa() {
+      lecturas[chapa-1] = {'G':[], 'B':[]};
+      resultados[chapa-1] = {'G':undefined, 'B':undefined};
+      actualizarStats();
+      guardarEnCache();
+    }
+
+    function confirmarReiniciar() {
+      if (confirm('¿Estás seguro de que quieres borrar todos los datos? Esta acción no se puede deshacer.')) {
+        resultados = [{'G':undefined, 'B':undefined}];
+        lecturas = [{'G':[], 'B':[]}];
+        chapa = 1;
+        localStorage.clear();
+        document.getElementById('chapa').textContent = chapa;
+        setTipo('G');
+      }
+    }
+
+    function exportarCSV() {
+      let csv = 'Chapa,Tipo,Mediciones,Promedio\n';
+      
+      for (let i = 0; i < resultados.length; i++) {
+        for (let t of ['G', 'B']) {
+          if (lecturas[i][t].length > 0) {
+            csv += `${i+1},${t},${lecturas[i][t].join(';')},${resultados[i][t]?.toFixed(1) || ''}\n`;
+          }
+        }
+      }
+      
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'mediciones.csv';
+      a.click();
+      window.URL.revokeObjectURL(url);
+    }
+
+    // Funciones para el manejo del cache
+    function guardarEnCache() {
+      localStorage.setItem('chapas_data', JSON.stringify({
+        resultados,
+        lecturas,
+        chapa,
+        tipo
+      }));
+    }
+
+    function cargarDeCache() {
+      const data = localStorage.getItem('chapas_data');
+      if (data) {
+        const parsed = JSON.parse(data);
+        resultados = parsed.resultados;
+        lecturas = parsed.lecturas;
+        chapa = parsed.chapa;
+        tipo = parsed.tipo;
+        document.getElementById('chapa').textContent = chapa;
+        setTipo(tipo);
+      }
+    }
+
+    // Cargar datos al iniciar
+    cargarDeCache();
+
+    // Modificar checkAndChangeType para guardar en cache
+    function checkAndChangeType(){
+      resultados[chapa-1][tipo] = lecturas[chapa-1][tipo].reduce((a, b) => a + b, 0) / lecturas[chapa-1][tipo].length;
+
+      if (lecturas[chapa-1][tipo].length === cantidadLecturas){
+        if (tipo === 'G'){
+          setTipo('B');
+        }else{
+          cambiarChapa(1);
+        }
+        guardarEnCache(); // Guardar cuando se completa una chapa
+      }
+      actualizarStats();
+    }
 
     //Touch event listeners for mobile
     cropArea.addEventListener('touchstart', (e) => {
