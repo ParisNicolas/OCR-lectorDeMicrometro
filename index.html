@@ -36,7 +36,10 @@
 
         </div>
     </div>
-    <button onclick="iniciarDeteccion()">Iniciar detección</button>
+    <!-- Capture button -->
+      <button onclick="capturarYLeer()" class="w-full bg-blue-500 text-white py-3 px-4 rounded-lg mt-4 text-lg font-medium">
+        Capturar
+      </button>
 
     <!-- Controls panel -->
     <div class="mt-4 bg-white rounded-lg shadow-md overflow-hidden">
@@ -48,29 +51,41 @@
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Width</label>
-            <input type="range" id="widthSlider" min="50" max="300" value="160" class="w-full">
+            <input type="range" id="widthSlider" min="25" max="300" value="160" class="w-full">
             <div class="text-xs text-gray-500 mt-1" id="widthValue">160px</div>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Height</label>
-            <input type="range" id="heightSlider" min="50" max="200" value="80" class="w-full">
+            <input type="range" id="heightSlider" min="25" max="200" value="80" class="w-full">
             <div class="text-xs text-gray-500 mt-1" id="heightValue">80px</div>
           </div>
+
+          <!-- Experimental Features -->
           <div class="border-t pt-4">
-            <div class="flex items-center justify-between mb-2">
-              <label class="text-sm font-medium text-gray-700">Auto Capture</label>
-              <input type="checkbox" id="timerEnabled" class="h-4 w-4 text-blue-600">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Interval (seconds)</label>
-              <input type="range" id="timerSlider" min="1" max="10" value="2" class="w-full">
-              <div class="text-xs text-gray-500 mt-1" id="timerValue">2s</div>
+            <h3 class="font-medium text-gray-700 mb-3">Funcionalidades Experimentales</h3>
+
+            <div class="space-y-3">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <label class="text-sm font-medium text-gray-700">Captura Automática</label>
+                  <input type="checkbox" id="timerEnabled" class="h-4 w-4 text-blue-600" onchange="toggleExperimentalFeature('timer')">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Intervalo (segundos)</label>
+                  <input type="range" id="timerSlider" min="1" max="10" value="2" class="w-full">
+                  <div class="text-xs text-gray-500 mt-1" id="timerValue">2s</div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-medium text-gray-700">Activación por Sonido</label>
+                <input type="checkbox" id="soundEnabled" class="h-4 w-4 text-blue-600" onchange="toggleExperimentalFeature('sound')">
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
 
 
@@ -366,6 +381,7 @@
     // Timer controls
     const timerSlider = document.getElementById('timerSlider');
     const timerEnabled = document.getElementById('timerEnabled');
+    const soundEnabled = document.getElementById('soundEnabled');
 
     timerSlider.addEventListener('input', () => {
       document.getElementById('timerValue').textContent = timerSlider.value + 's';
@@ -395,7 +411,19 @@
       }
     });
 
-    
+    function toggleExperimentalFeature(feature) {
+      if (feature === 'timer') {
+        toggleTimer();
+      } else if (feature === 'sound') {
+        // Implement sound activation logic here
+        if (soundEnabled.checked) {
+          iniciarDeteccion();
+        } else {
+          detecting = false; // Stop sound detection
+        }
+      }
+    }
+
 
     //Touch event listeners for mobile
     cropArea.addEventListener('touchstart', (e) => {
@@ -484,7 +512,7 @@
     }
 
 
-    
+
   </script>
   <script src="app.js"></script>
 </body>
