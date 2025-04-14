@@ -143,8 +143,9 @@
     </div>
   </div>
 
-  <!-- Hidden canvas for processing -->
-  <canvas id="canvas" class="hidden"></canvas>
+  <!-- Hidden canvas for processing  class="hidden"-->
+  <canvas id="canvas"></canvas>
+  <canvas id="canvas2"></canvas>
 
 
   <script>
@@ -161,7 +162,7 @@
     //Variables de estado
     const cantidadLecturas = 6;
     let chapa = 1, tipo = 'G';
-    let resultados = [{'G':undefined, 'B':0.0}];
+    let resultados = [{'G':0.0, 'B':0.0}];
     let lecturas = [{'G':[], 'B':[]}];
     let timerInterval = null;
     let lastValue = null;
@@ -177,11 +178,13 @@
 
     // Reconocimiento de texto
     function capturarYLeer(fromTimer = false) {
+      //Ajustar canvas al tamaño del video
       const vw = video.videoWidth;
       const vh = video.videoHeight;
       canvas.width = vw;
       canvas.height = vh;
 
+      //Capturar un frame del video
       ctx.drawImage(video, 0, 0, vw, vh);
 
       // Coordenadas relativas de la zona de recorte
@@ -199,7 +202,8 @@
 
       const cropped = ctx.getImageData(cropX, cropY, cropW, cropH);
 
-      const tempCanvas = document.createElement('canvas');
+      //document.createElement('canvas')
+      const tempCanvas = document.getElementById('canvas2');
       tempCanvas.width = cropW;
       tempCanvas.height = cropH;
       const tempCtx = tempCanvas.getContext('2d');
