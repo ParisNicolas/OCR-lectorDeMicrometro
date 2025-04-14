@@ -143,9 +143,8 @@
     </div>
   </div>
 
-  <!-- Hidden canvas for processing  class="hidden"-->
-  <canvas id="canvas"></canvas>
-  <canvas id="canvas2"></canvas>
+  <!-- Hidden canvas for processing -->
+  <canvas id="canvas" class="hidden"></canvas>
 
 
   <script>
@@ -178,36 +177,53 @@
 
     // Reconocimiento de texto
     function capturarYLeer(fromTimer = false) {
-      //Ajustar canvas al tamaño del video
+      // Ajustar canvas al tamaño real del video (no al contenedor)
       const vw = video.videoWidth;
       const vh = video.videoHeight;
       canvas.width = vw;
       canvas.height = vh;
 
-      //Capturar un frame del video
-      ctx.drawImage(video, 0, 0, vw, vh);
-
-      // Coordenadas relativas de la zona de recorte
+      // Obtener rectángulos visibles
       const cropRect = cropArea.getBoundingClientRect();
       const videoRect = video.getBoundingClientRect();
 
-      // Convertir de px de pantalla a coordenadas del canvas/video
-      const scaleX = vw / videoRect.width;
-      const scaleY = vh / videoRect.height;
+      // Calcular relación de aspecto y detectar recortes
+      const videoAspect = vw / vh;
+      const elementAspect = videoRect.width / videoRect.height;
 
-      const cropX = (cropRect.left - videoRect.left) * scaleX;
-      const cropY = (cropRect.top - videoRect.top) * scaleY;
-      const cropW = cropRect.width * scaleX;
-      const cropH = cropRect.height * scaleY;
+      let scale, offsetX = 0, offsetY = 0;
 
+      if (videoAspect > elementAspect) {
+        // El video se recorta horizontalmente (sobran lados)
+        scale = vh / videoRect.height;
+        const fittedVideoWidth = videoRect.height * videoAspect;
+        offsetX = (fittedVideoWidth - videoRect.width) / 2;
+      } else {
+        // El video se recorta verticalmente (sobran arriba y abajo)
+        scale = vw / videoRect.width;
+        const fittedVideoHeight = videoRect.width / videoAspect;
+        offsetY = (fittedVideoHeight - videoRect.height) / 2;
+      }
+
+      // Coordenadas relativas ajustadas
+      const cropX = (cropRect.left - videoRect.left + offsetX) * scale;
+      const cropY = (cropRect.top - videoRect.top + offsetY) * scale;
+      const cropW = cropRect.width * scale;
+      const cropH = cropRect.height * scale;
+
+      // Capturar frame original
+      ctx.drawImage(video, 0, 0, vw, vh);
+
+      // Obtener recorte
       const cropped = ctx.getImageData(cropX, cropY, cropW, cropH);
 
-      //document.createElement('canvas')
-      const tempCanvas = document.getElementById('canvas2');
+      // Dibujarlo en un nuevo canvas
+      const tempCanvas = document.createElement('canvas');
       tempCanvas.width = cropW;
       tempCanvas.height = cropH;
       const tempCtx = tempCanvas.getContext('2d');
       tempCtx.putImageData(cropped, 0, 0);
+
 
       // Preprocessing for better OCR
       const imageData = tempCtx.getImageData(0, 0, cropW, cropH);
@@ -432,7 +448,7 @@
       if (lecturas[chapa-1][tipo].length > 0) {
         lecturas[chapa-1][tipo].pop();
         actualizarStats();
-        guardarEnCache();
+        //guardarEnCache();
       }
     }
 
@@ -455,14 +471,10 @@
     }
 
     function exportarCSV() {
-      let csv = 'Chapa,Tipo,Mediciones,Promedio\n';
+      let csv = 'Chapa,PromGalvanizado,PromBase\n';
       
       for (let i = 0; i < resultados.length; i++) {
-        for (let t of ['G', 'B']) {
-          if (lecturas[i][t].length > 0) {
-            csv += `${i+1},${t},${lecturas[i][t].join(';')},${resultados[i][t]?.toFixed(1) || ''}\n`;
-          }
-        }
+        csv += `${i+1},${resultados[i]['G']?.toFixed(1) || ''},${resultados[i]['B']?.toFixed(1) || ''}\n`;
       }
       
       const blob = new Blob([csv], { type: 'text/csv' });
