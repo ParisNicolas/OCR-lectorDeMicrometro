@@ -192,32 +192,11 @@
       const videoRect = video.getBoundingClientRect();
 
       // Convertir de px de pantalla a coordenadas del canvas/video
-      // Calcular la relación de aspecto del video
-      const videoAspect = vw / vh;
-      const containerAspect = videoRect.width / videoRect.height;
+      const scaleX = vw / videoRect.width;
+      const scaleY = vh / videoRect.height;
 
-      // Calcular las dimensiones reales del video mostrado
-      let displayedVideoHeight = videoRect.height;
-      let displayedVideoWidth = videoRect.width;
-      
-      if (videoAspect > containerAspect) {
-        // Video más ancho que el contenedor
-        displayedVideoHeight = videoRect.width / videoAspect;
-      } else {
-        // Video más alto que el contenedor
-        displayedVideoWidth = videoRect.height * videoAspect;
-      }
-
-      // Calcular offset del video centrado
-      const videoOffsetY = (videoRect.height - displayedVideoHeight) / 2;
-      const videoOffsetX = (videoRect.width - displayedVideoWidth) / 2;
-
-      // Ajustar las coordenadas del recorte
-      const scaleX = vw / displayedVideoWidth;
-      const scaleY = vh / displayedVideoHeight;
-
-      const cropX = ((cropRect.left - videoRect.left - videoOffsetX) * scaleX);
-      const cropY = ((cropRect.top - videoRect.top - videoOffsetY) * scaleY);
+      const cropX = (cropRect.left - videoRect.left) * scaleX;
+      const cropY = (cropRect.top - videoRect.top) * scaleY;
       const cropW = cropRect.width * scaleX;
       const cropH = cropRect.height * scaleY;
 
