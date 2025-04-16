@@ -340,15 +340,22 @@
         const value = parseFloat(text.replace(/[^\d.]/g, ''));
         if (!isNaN(value)) {
           const currentLimits = limites[tipo];
-          if (value >= currentLimits.min && value <= currentLimits.max && (!fromTimer || value !== lastValue) && !pausedForConfirmation){
-            lecturas[chapa-1][tipo].push(value);
-            checkAndChangeType();
-            overlayText.textContent = `${value.toFixed(1)} μ`;
-            lastValue = value;
-          } else {
-            if (fromTimer) overlayText.textContent = pausedForConfirmation ? "Pausado" : "Duplicado";
-            else overlayText.textContent = "Fuera de rango";
+          if (pausedForConfirmation) {
+            overlayText.textContent = "Pausado";
+            return;
           }
+          if (value < currentLimits.min || value > currentLimits.max) {
+            overlayText.textContent = "Fuera de rango";
+            return;
+          }
+          if (fromTimer && value === lastValue) {
+            overlayText.textContent = "Duplicado";
+            return;
+          }
+          lecturas[chapa-1][tipo].push(value);
+          checkAndChangeType();
+          overlayText.textContent = `${value.toFixed(1)} μ`;
+          lastValue = value;
         } else {
           overlayText.textContent = "No detectado";
         }
@@ -416,8 +423,8 @@
       pausedForConfirmation = false;
       
       // Solo reiniciar el timer si estaba activo y se solicita reinicio
-      if (wasTimerActive && restartTimer) {
-        toggleTimer();
+      if (wasTimerActive && restartTimer && !timerInterval) {
+        setTimeout(() => toggleTimer(), 100);
       }
       
       delete overlay.dataset.wasTimerActive;
