@@ -1,4 +1,4 @@
-const CACHE_NAME = "ocr-cache-v2";
+const CACHE_NAME = "ocr-cache-v4.0";
 const urlsToCache = [
   "./",
   "./index.html",
