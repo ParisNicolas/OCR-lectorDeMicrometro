@@ -7,7 +7,7 @@ if ('serviceWorker' in navigator) {
   });
 }*/
 
-
+/*
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/service-worker.js').then(reg => {
     // Cuando hay una nueva versión esperando para activarse:
@@ -24,4 +24,4 @@ if ('serviceWorker' in navigator) {
       };
     };
   });
-}
+}*/

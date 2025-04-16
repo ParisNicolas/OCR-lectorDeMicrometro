@@ -334,7 +334,8 @@
             overlayText.textContent = `${value.toFixed(1)} μ`;
             lastValue = value;
           } else {
-            overlayText.textContent = fromTimer ? "Duplicado" : "Fuera de rango";
+            if (fromTimer) overlayText.textContent = pausedForConfirmation ? "Pausado" : "Duplicado";
+            else overlayText.textContent = "Fuera de rango";
           }
         } else {
           overlayText.textContent = "No detectado";
