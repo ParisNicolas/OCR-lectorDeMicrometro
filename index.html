@@ -380,14 +380,17 @@
       document.getElementById('overlayTitle').textContent = title;
       document.getElementById('overlayMessage').textContent = message;
       
-      // Agregar botón de detener timer si está activo
-      if (timerInterval) {
+      const wasTimerActive = timerInterval !== null;
+      if (wasTimerActive) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        
         const stopBtn = document.createElement('button');
         stopBtn.className = 'stop-timer-btn';
-        stopBtn.textContent = '⏹️ Detener Captura Automática';
+        stopBtn.textContent = '⏹️ Cerrar sin reanudar capturas';
         stopBtn.onclick = (e) => {
           e.stopPropagation();
-          toggleTimer();
+          hidePhaseOverlay(false);
         };
         overlay.appendChild(stopBtn);
       }
@@ -395,16 +398,29 @@
       overlay.classList.add('active');
       pausedForConfirmation = true;
       phaseChangeSound.play();
+      
+      // Almacenar el estado del timer para restaurarlo después
+      overlay.dataset.wasTimerActive = wasTimerActive;
     }
 
-    function hidePhaseOverlay() {
+    function hidePhaseOverlay(restartTimer = true) {
       const overlay = document.getElementById('phaseOverlay');
+      const wasTimerActive = overlay.dataset.wasTimerActive === 'true';
+      
       const stopBtn = overlay.querySelector('.stop-timer-btn');
       if (stopBtn) {
         overlay.removeChild(stopBtn);
       }
+      
       overlay.classList.remove('active');
       pausedForConfirmation = false;
+      
+      // Solo reiniciar el timer si estaba activo y se solicita reinicio
+      if (wasTimerActive && restartTimer) {
+        toggleTimer();
+      }
+      
+      delete overlay.dataset.wasTimerActive;
     }
 
     function hidePhaseOverlay() {
