@@ -27,6 +27,32 @@
     .toast.fade-out {
       opacity: 0;
     }
+    #phaseOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease-in-out;
+    }
+
+    #phaseOverlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .phaseOverlay-content {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+    }
   </style>
 </head>
 <body class="bg-gray-100 p-4 font-sans">
@@ -54,9 +80,13 @@
         </div>
     </div>
     <!-- Capture button -->
-      <button onclick="capturarYLeer()" class="w-full bg-blue-500 text-white py-3 px-4 rounded-lg mt-4 text-lg font-medium">
-        Capturar
-      </button>
+      <div class="flex items-center">
+        <button onclick="capturarYLeer()" class="w-full bg-blue-500 text-white py-3 px-4 rounded-lg mt-4 text-lg font-medium">
+          Capturar
+        </button>
+        <input type="checkbox" id="timerEnabled" class="ml-2 h-4 w-4 text-blue-600" onchange="toggleExperimentalFeature('timer')">
+      </div>
+
 
     <!-- Controls panel -->
     <div class="mt-4 bg-white rounded-lg shadow-md overflow-hidden">
@@ -76,6 +106,10 @@
             <input type="range" id="heightSlider" min="25" max="200" value="80" class="w-full">
             <div class="text-xs text-gray-500 mt-1" id="heightValue">80px</div>
           </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad de Capturas</label>
+            <input type="number" id="cantidadLecturasInput" min="1" value="6" onchange="actualizarCantidadLecturas()" class="w-full">
+          </div>
 
           <!-- Experimental Features -->
           <div class="border-t pt-4">
@@ -84,19 +118,9 @@
             <div class="space-y-3">
               <div>
                 <div class="flex items-center justify-between mb-2">
-                  <label class="text-sm font-medium text-gray-700">Captura Automática</label>
-                  <input type="checkbox" id="timerEnabled" class="h-4 w-4 text-blue-600" onchange="toggleExperimentalFeature('timer')">
+                  <label class="text-sm font-medium text-gray-700">Activación por Sonido</label>
+                  <input type="checkbox" id="soundEnabled" class="h-4 w-4 text-blue-600" onchange="toggleExperimentalFeature('sound')">
                 </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Intervalo (segundos)</label>
-                  <input type="range" id="timerSlider" min="1" max="10" value="2" class="w-full">
-                  <div class="text-xs text-gray-500 mt-1" id="timerValue">2s</div>
-                </div>
-              </div>
-
-              <div class="flex items-center justify-between">
-                <label class="text-sm font-medium text-gray-700">Activación por Sonido</label>
-                <input type="checkbox" id="soundEnabled" class="h-4 w-4 text-blue-600" onchange="toggleExperimentalFeature('sound')">
               </div>
             </div>
           </div>
@@ -162,6 +186,12 @@
 
   <!-- Hidden canvas for processing -->
   <canvas id="canvas" class="hidden"></canvas>
+  <div id="phaseOverlay">
+    <div class="phaseOverlay-content">
+      <h2 id="overlayTitle"></h2>
+      <p id="overlayMessage"></p>
+    </div>
+  </div>
 
 
   <script>
@@ -175,9 +205,18 @@
     const heightSlider = document.getElementById('heightSlider');
     const cropArea = document.getElementById('crop-area');
 
-    //Variables de estado
-    const cantidadLecturas = 6;
+    // Variables de estado
+    let cantidadLecturas = 6;
     let chapa = 1, tipo = 'G';
+    let pausedForConfirmation = false;
+    const limites = {
+      'G': { min: 2.0, max: 10.0 },
+      'B': { min: 8.0, max: 28.0 }
+    };
+
+    // Sonidos
+    const phaseChangeSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBhpKldr9w49NFxIuXY/Y/tear2Y1FhJKktX/n1waDhQ+htz8sHpCGxMpScPY9rLCg1gfBxFBp+b/m1UOBxNQnN/5q3p...'); // Base64 encoded beep sound
+
     let resultados = [{'G':0.0, 'B':0.0}];
     let lecturas = [{'G':[], 'B':[]}];
     let timerInterval = null;
@@ -281,7 +320,8 @@
       ).then(({ data: { text } }) => {
         const value = parseFloat(text.replace(/[^\d.]/g, ''));
         if (!isNaN(value)) {
-          if (value < 30.0 && value > 1.0 && (!fromTimer || value !== lastValue)){
+          const currentLimits = limites[tipo];
+          if (value >= currentLimits.min && value <= currentLimits.max && (!fromTimer || value !== lastValue) && !pausedForConfirmation){
             lecturas[chapa-1][tipo].push(value);
             checkAndChangeType();
             overlayText.textContent = `${value.toFixed(1)} μ`;
@@ -314,19 +354,48 @@
     }
 
     // Funciones de cambio de chapa y tipo
+
+    function showPhaseOverlay(title, message) {
+      const overlay = document.getElementById('phaseOverlay');
+      document.getElementById('overlayTitle').textContent = title;
+      document.getElementById('overlayMessage').textContent = message;
+      overlay.classList.add('active');
+      pausedForConfirmation = true;
+      phaseChangeSound.play();
+    }
+
+    function hidePhaseOverlay() {
+      const overlay = document.getElementById('phaseOverlay');
+      overlay.classList.remove('active');
+      pausedForConfirmation = false;
+    }
+
+    function actualizarCantidadLecturas() {
+      const input = document.getElementById('cantidadLecturasInput');
+      cantidadLecturas = parseInt(input.value) || 6;
+      guardarEnCache();
+    }
+
     function checkAndChangeType(){
-      //Promediar y actualizar resultados
       resultados[chapa-1][tipo] = lecturas[chapa-1][tipo].reduce((a, b) => a + b, 0) / lecturas[chapa-1][tipo].length;
 
       if (lecturas[chapa-1][tipo].length === cantidadLecturas){
         if (tipo === 'G'){
-          setTipo('B');
-          showToast('Cambiando a Base');
+          showPhaseOverlay('Cambio a Base', 'Toque la pantalla para comenzar las mediciones de Base');
+          document.addEventListener('click', function phaseClickHandler() {
+            hidePhaseOverlay();
+            setTipo('B');
+            document.removeEventListener('click', phaseClickHandler);
+          }, { once: true });
         }else{
-          cambiarChapa(1);
-          showToast('Cambiando a siguiente chapa');
+          showPhaseOverlay('Cambio de Chapa', 'Toque la pantalla para comenzar con la siguiente chapa');
+          document.addEventListener('click', function phaseClickHandler() {
+            hidePhaseOverlay();
+            cambiarChapa(1);
+            document.removeEventListener('click', phaseClickHandler);
+          }, { once: true });
         }
-        guardarEnCache(); // Guardar cuando se completa una chapa
+        guardarEnCache();
       }
       actualizarStats();
     }
@@ -512,7 +581,8 @@
         resultados,
         lecturas,
         chapa,
-        tipo
+        tipo,
+        cantidadLecturas
       }));
     }
 
@@ -524,30 +594,15 @@
         lecturas = parsed.lecturas;
         chapa = parsed.chapa;
         tipo = parsed.tipo;
+        cantidadLecturas = parsed.cantidadLecturas;
         document.getElementById('chapa').textContent = chapa;
+        document.getElementById('cantidadLecturasInput').value = cantidadLecturas;
         setTipo(tipo);
       }
     }
 
     // Cargar datos al iniciar
     cargarDeCache();
-
-    // Modificar checkAndChangeType para guardar en cache
-    function checkAndChangeType(){
-      resultados[chapa-1][tipo] = lecturas[chapa-1][tipo].reduce((a, b) => a + b, 0) / lecturas[chapa-1][tipo].length;
-
-      if (lecturas[chapa-1][tipo].length === cantidadLecturas){
-        if (tipo === 'G'){
-          setTipo('B');
-          showToast('Cambiando a Base');
-        }else{
-          cambiarChapa(1);
-          showToast('Cambiando a siguiente chapa');
-        }
-        guardarEnCache(); // Guardar cuando se completa una chapa
-      }
-      actualizarStats();
-    }
 
     //Touch event listeners for mobile
     cropArea.addEventListener('touchstart', (e) => {
@@ -646,7 +701,7 @@
         setTimeout(() => {
           document.body.removeChild(toast);
         }, 1000);
-      }, 1000);
+      }, 3000);
     }
 
     document.addEventListener('keydown', (event) => {
