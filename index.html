@@ -53,6 +53,18 @@
       border-radius: 8px;
       text-align: center;
     }
+    
+    .stop-timer-btn {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background-color: #ef4444;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
   </style>
 </head>
 <body class="bg-gray-100 p-4 font-sans">
@@ -367,9 +379,32 @@
       const overlay = document.getElementById('phaseOverlay');
       document.getElementById('overlayTitle').textContent = title;
       document.getElementById('overlayMessage').textContent = message;
+      
+      // Agregar botón de detener timer si está activo
+      if (timerInterval) {
+        const stopBtn = document.createElement('button');
+        stopBtn.className = 'stop-timer-btn';
+        stopBtn.textContent = '⏹️ Detener Captura Automática';
+        stopBtn.onclick = (e) => {
+          e.stopPropagation();
+          toggleTimer();
+        };
+        overlay.appendChild(stopBtn);
+      }
+      
       overlay.classList.add('active');
       pausedForConfirmation = true;
       phaseChangeSound.play();
+    }
+
+    function hidePhaseOverlay() {
+      const overlay = document.getElementById('phaseOverlay');
+      const stopBtn = overlay.querySelector('.stop-timer-btn');
+      if (stopBtn) {
+        overlay.removeChild(stopBtn);
+      }
+      overlay.classList.remove('active');
+      pausedForConfirmation = false;
     }
 
     function hidePhaseOverlay() {
