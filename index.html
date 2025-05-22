@@ -1,72 +1,24 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
   <meta charset="UTF-8">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2196f3" />
-
+  <meta name="author" content="Nicolás Paris (pasante ITR)">
+  <meta name="application-name" content="OCR Cámara Web">
+  <meta name="description" content="App para capturar y registrar lecturas de espesor de pintura y galvanizado.">
+  
   <title>OCR con zona de captura</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
-  <style>
-    .toast {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background-color: #333;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 5px;
-      opacity: 1;
-      transition: opacity 1s ease-in-out;
-    }
-
-    .toast.fade-out {
-      opacity: 0;
-    }
-    #phaseOverlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.7);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s ease-in-out;
-    }
-
-    #phaseOverlay.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .phaseOverlay-content {
-      background-color: white;
-      padding: 20px;
-      border-radius: 8px;
-      text-align: center;
-    }
-    
-    .stop-timer-btn {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      background-color: #ef4444;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 0.875rem;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body class="bg-gray-100 p-4 font-sans">
 
   <div class="flex flex-col w-full max-w-lg mx-auto px-2">
@@ -76,35 +28,39 @@
         <video id="video" class="absolute w-full h-full object-cover" autoplay playsinline></video>
 
         <!-- Zona de recorte editable (movible y redimensionable) -->
-        <div id="crop-area"
-             class="absolute border-2 border-yellow-400 bg-yellow-200 bg-opacity-20 resize rounded"
-             style="top: 40px; left: 40px; width: 160px; height: 80px; cursor: move; overflow: auto; z-index: 20;">
+        <div id="crop-area" class="absolute border-2 border-yellow-400 bg-yellow-200 bg-opacity-20 resize rounded"
+          style="top: 40px; left: 40px; width: 160px; height: 80px; cursor: move; overflow: auto; z-index: 20;">
         </div>
 
         <!-- Overlay con texto OCR -->
-        <div id="overlayText" class="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-lg font-bold z-30">
+        <div id="overlayText"
+          class="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-lg font-bold z-30">
           ...
         </div>
 
         <!-- Preview canvas in video container -->
-        <canvas id="previewCanvas" class="absolute bottom-1 left-1 z-30 border border-white rounded shadow-lg" style="width: 100px; height: 50px;"></canvas>
+        <canvas id="previewCanvas" class="absolute bottom-1 left-1 z-30 border border-white rounded shadow-lg"
+          style="width: 100px; height: 50px;"></canvas>
 
-        </div>
+      </div>
     </div>
     <!-- Capture button -->
-      <div class="flex items-center gap-2">
-        <button onclick="capturarYLeer()" class="flex-1 bg-blue-500 text-white py-3 px-4 rounded-lg mt-4 text-lg font-medium">
-          Capturar
-        </button>
-        <button id="timerButton" onclick="toggleTimer()" class="mt-4 p-3 rounded-lg transition-colors duration-200" style="background-color: #e5e7eb;">
-          ⏱️
-        </button>
-      </div>
+    <div class="flex items-center gap-2">
+      <button onclick="capturarYLeer()"
+        class="flex-1 bg-blue-500 text-white py-3 px-4 rounded-lg mt-4 text-lg font-medium">
+        Capturar
+      </button>
+      <button id="timerButton" onclick="toggleTimer()" class="mt-4 p-3 rounded-lg transition-colors duration-200"
+        style="background-color: #e5e7eb;">
+        ⏱️
+      </button>
+    </div>
 
 
     <!-- Controls panel -->
     <div class="mt-4 bg-white rounded-lg shadow-md overflow-hidden">
-      <button onclick="toggleControls()" class="w-full bg-gray-50 p-3 text-left font-medium flex justify-between items-center">
+      <button onclick="toggleControls()"
+        class="w-full bg-gray-50 p-3 text-left font-medium flex justify-between items-center">
         <span>Config</span>
         <span id="controlsArrow">▼</span>
       </button>
@@ -120,10 +76,21 @@
             <input type="range" id="heightSlider" min="25" max="200" value="80" class="w-full">
             <div class="text-xs text-gray-500 mt-1" id="heightValue">80px</div>
           </div>
+          
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad de Capturas</label>
-            <input type="number" id="cantidadLecturasInput" min="1" value="6" onchange="actualizarCantidadLecturas()" class="w-full">
+            <input type="number" id="cantidadLecturasInput" min="1" value="6" onchange="actualizarCantidadLecturas()"
+              class="w-full">
           </div>
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-sm font-medium text-gray-700">Habilitar confirmación</label>
+              <input type="checkbox" id="confirmationCheck" class="h-4 w-4 text-blue-600"
+                onchange="toggleConfirmation()">
+            </div>
+          </div>
+
+          
 
           <!-- Experimental Features -->
           <div class="border-t pt-4">
@@ -133,13 +100,41 @@
               <div>
                 <div class="flex items-center justify-between mb-2">
                   <label class="text-sm font-medium text-gray-700">Activación por Sonido</label>
-                  <input type="checkbox" id="soundEnabled" class="h-4 w-4 text-blue-600" onchange="toggleExperimentalFeature('sound')">
+                  <input type="checkbox" id="soundEnabled" class="h-4 w-4 text-blue-600"
+                    onchange="toggleExperimentalFeature('sound')">
                 </div>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Intervalo de Captura (s)</label>
-                <input type="range" id="timerSlider" min="1" max="10" value="2" class="w-full">
-                <div class="text-xs text-gray-500 mt-1" id="timerValue">2s</div>
+                <input type="range" id="timerSlider" min="1" max="4" step="0.2" value="1.6" class="w-full">
+                <div class="text-xs text-gray-500 mt-1" id="timerValue">1.6s</div>
+              </div>
+              <div class="border rounded-lg">
+                <button onclick="toggleLimites()" class="w-full text-left px-4 py-2 bg-gray-100 hover:bg-gray-200 font-semibold flex justify-between items-center">
+                  <span>Límites (con captura automatizada)</span>
+                  <span id="limitesIcono">▼</span>
+                </button>
+
+                <div id="limitesContenido" class="hidden px-4 py-2 space-y-4">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Galvanizado - Límite Inferior</label>
+                      <input type="number" id="limiteGalvInf" value="0" step="0.1" placeholder="Ej. 2.0" class="w-full" onchange="actualizarLimites()">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Galvanizado - Límite Superior</label>
+                      <input type="number" id="limiteGalvSup" value="0" step="0.1" placeholder="Ej. 12.0" class="w-full" onchange="actualizarLimites()">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Base - Límite Inferior</label>
+                      <input type="number" id="limiteBaseInf" value="0" step="0.1" placeholder="Ej. 8.0" class="w-full" onchange="actualizarLimites()">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Base - Límite Superior</label>
+                      <input type="number" id="limiteBaseSup" value="0" step="0.1" placeholder="Ej. 28.0" class="w-full" onchange="actualizarLimites()">
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -149,58 +144,70 @@
 
 
 
-      <!-- Info del proceso -->
-      <div class="p-3">
-        <div class="flex justify-between items-center mb-3">
-          <div class="text-lg font-bold">Chapa: <span id="chapa">1</span></div>
-          <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm" id="tipo">Galvanizado</div>
-        </div>
+    <!-- Info del proceso -->
+    <div class="p-3">
+      <div class="flex justify-between items-center mb-3">
+        <div class="text-lg font-bold">Chapa: <span id="chapa">1</span></div>
+        <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm" id="tipo">Galvanizado</div>
+      </div>
 
-        <div class="bg-gray-100 p-3 rounded-lg mb-4">
-          <div class="flex items-center gap-2 mb-2">
-            <span class="text-gray-600 whitespace-nowrap">Lecturas:</span>
-            <div id="listaLecturas" class="flex flex-wrap gap-1 flex-1 min-h-[24px]"></div>
-            <span id="lecturas" class="font-mono whitespace-nowrap">0/6</span>
-          </div>
-          <div class="flex justify-between mb-2">
-            <span class="text-gray-600">Promedio:</span>
-            <span id="promedio" class="font-mono font-bold">-</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-600">Desviación:</span>
-            <span id="desviacion" class="font-mono">-</span>
-          </div>
+      <div class="bg-gray-100 p-3 rounded-lg mb-4">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-gray-600 whitespace-nowrap">Lecturas:</span>
+          <div id="listaLecturas" class="flex flex-wrap gap-1 flex-1 min-h-[24px]"></div>
+          <span id="lecturas" class="font-mono whitespace-nowrap">0/6</span>
         </div>
-
-        <!-- Botones -->
-        <div class="grid grid-cols-2 gap-3">
-          <button onclick="setTipo('G')" class="bg-gray-200 p-4 rounded-lg flex flex-col items-center touch-manipulation">
-            <div class="text-sm">Galvanizado</div>
-            <div class="font-bold">G</div>
-          </button>
-          <button onclick="setTipo('B')" class="bg-gray-200 p-3 rounded-lg flex flex-col items-center">
-            <div class="text-sm">Base</div>
-            <div class="font-bold">B</div>
-          </button>
-          <button onclick="cambiarChapa(-1)" class="bg-gray-200 p-3 rounded-lg flex flex-col items-center">
-            <div class="text-sm">-1</div>
-            <div class="font-bold">↓</div>
-          </button>
-          <button onclick="cambiarChapa(1)" class="bg-gray-200 p-3 rounded-lg flex flex-col items-center">
-            <div class="text-sm">+1</div>
-            <div class="font-bold">↑</div>
-          </button>
+        <div class="flex justify-between mb-2">
+          <span class="text-gray-600">Promedio:</span>
+          <span id="promedio" class="font-mono font-bold">-</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-600">Desviación:</span>
+          <span id="desviacion" class="font-mono">-</span>
         </div>
       </div>
-    </div>
 
-    <!-- Barra inferior -->
-    <div class="mt-4 bg-white rounded-lg shadow-md p-3 flex justify-around">
-      <button onclick="cancelarUltimaMedicion()" class="p-2 text-blue-600"><div class="flex flex-col items-center">↩️<div class="text-xs">Cancelar</div></div></button>
-      <button onclick="borrarDatosChapa()" class="p-2 text-blue-600"><div class="flex flex-col items-center">🔄<div class="text-xs">Releer</div></div></button>
-      <button onclick="confirmarReiniciar()" class="p-2 text-blue-600"><div class="flex flex-col items-center">🗑️<div class="text-xs">Reiniciar</div></div></button>
-      <button onclick="exportarCSV()" class="p-2 text-blue-600"><div class="flex flex-col items-center">📥<div class="text-xs">Exportar</div></div></button>
+      <!-- Botones -->
+      <div class="grid grid-cols-2 gap-3">
+        <button onclick="setTipo('G')" class="bg-gray-200 p-4 rounded-lg flex flex-col items-center touch-manipulation">
+          <div class="text-sm">Galvanizado</div>
+          <div class="font-bold">G</div>
+        </button>
+        <button onclick="setTipo('B')" class="bg-gray-200 p-3 rounded-lg flex flex-col items-center">
+          <div class="text-sm">Base</div>
+          <div class="font-bold">B</div>
+        </button>
+        <button onclick="cambiarChapa(-1)" class="bg-gray-200 p-3 rounded-lg flex flex-col items-center">
+          <div class="text-sm">-1</div>
+          <div class="font-bold">↓</div>
+        </button>
+        <button onclick="cambiarChapa(1)" class="bg-gray-200 p-3 rounded-lg flex flex-col items-center">
+          <div class="text-sm">+1</div>
+          <div class="font-bold">↑</div>
+        </button>
+      </div>
     </div>
+  </div>
+
+  <!-- Barra inferior -->
+  <div class="mt-4 bg-white rounded-lg shadow-md p-3 flex justify-around">
+    <button onclick="cancelarUltimaMedicion()" class="p-2 text-blue-600">
+      <div class="flex flex-col items-center">↩️<div class="text-xs">Cancelar</div>
+      </div>
+    </button>
+    <button onclick="borrarDatosChapa()" class="p-2 text-blue-600">
+      <div class="flex flex-col items-center">🔄<div class="text-xs">Releer</div>
+      </div>
+    </button>
+    <button onclick="confirmarReiniciar()" class="p-2 text-blue-600">
+      <div class="flex flex-col items-center">🗑️<div class="text-xs">Reiniciar</div>
+      </div>
+    </button>
+    <button onclick="exportarCSV()" class="p-2 text-blue-600">
+      <div class="flex flex-col items-center">📥<div class="text-xs">Exportar</div>
+      </div>
+    </button>
+  </div>
   </div>
 
   <!-- Hidden canvas for processing -->
@@ -213,567 +220,8 @@
   </div>
 
 
-  <script>
-    // Elementos del DOM
-    const listaLecturas = document.getElementById('listaLecturas');
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const overlayText = document.getElementById('overlayText');
-    const ctx = canvas.getContext('2d');
-    const widthSlider = document.getElementById('widthSlider');
-    const heightSlider = document.getElementById('heightSlider');
-    const cropArea = document.getElementById('crop-area');
-
-    // Variables de estado
-    let cantidadLecturas = 6;
-    let chapa = 1, tipo = 'G';
-    let pausedForConfirmation = false;
-    const limites = {
-      'G': { min: 2.0, max: 10.0 },
-      'B': { min: 8.0, max: 28.0 }
-    };
-
-    // Sonidos
-    const phaseChangeSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBhpKldr9w49NFxIuXY/Y/tear2Y1FhJKktX/n1waDhQ+htz8sHpCGxMpScPY9rLCg1gfBxFBp+b/m1UOBxNQnN/5q3p...'); // Base64 encoded beep sound
-
-    let resultados = [{'G':0.0, 'B':0.0}];
-    let lecturas = [{'G':[], 'B':[]}];
-    let timerInterval = null;
-    let lastValue = null;
-
-    // Drag and drop para la zona de recorte
-    let isDragging = false;
-    let startX, startY, initialX, initialY;
-
-    // Acceder a la cámara
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-    .then(stream => video.srcObject = stream)
-    .catch(err => alert('Error al acceder a la cámara'));
-
-    // Reconocimiento de texto
-    function capturarYLeer(fromTimer = false) {
-      // Ajustar canvas al tamaño real del video (no al contenedor)
-      const vw = video.videoWidth;
-      const vh = video.videoHeight;
-      canvas.width = vw;
-      canvas.height = vh;
-
-      // Obtener rectángulos visibles
-      const cropRect = cropArea.getBoundingClientRect();
-      const videoRect = video.getBoundingClientRect();
-
-      // Calcular relación de aspecto y detectar recortes
-      const videoAspect = vw / vh;
-      const elementAspect = videoRect.width / videoRect.height;
-
-      let scale, offsetX = 0, offsetY = 0;
-
-      if (videoAspect > elementAspect) {
-        // El video se recorta horizontalmente (sobran lados)
-        scale = vh / videoRect.height;
-        const fittedVideoWidth = videoRect.height * videoAspect;
-        offsetX = (fittedVideoWidth - videoRect.width) / 2;
-      } else {
-        // El video se recorta verticalmente (sobran arriba y abajo)
-        scale = vw / videoRect.width;
-        const fittedVideoHeight = videoRect.width / videoAspect;
-        offsetY = (fittedVideoHeight - videoRect.height) / 2;
-      }
-
-      // Coordenadas relativas ajustadas
-      const cropX = (cropRect.left - videoRect.left + offsetX) * scale;
-      const cropY = (cropRect.top - videoRect.top + offsetY) * scale;
-      const cropW = cropRect.width * scale;
-      const cropH = cropRect.height * scale;
-
-      // Capturar frame original
-      ctx.drawImage(video, 0, 0, vw, vh);
-
-      // Obtener recorte
-      const cropped = ctx.getImageData(cropX, cropY, cropW, cropH);
-
-      // Dibujarlo en un nuevo canvas
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = cropW;
-      tempCanvas.height = cropH;
-      const tempCtx = tempCanvas.getContext('2d');
-      tempCtx.putImageData(cropped, 0, 0);
-
-
-      // Preprocessing for better OCR
-      const imageData = tempCtx.getImageData(0, 0, cropW, cropH);
-      const data = imageData.data;
-
-      // Convert to grayscale and increase contrast
-      for (let i = 0; i < data.length; i += 4) {
-        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-        // Increase contrast
-        const contrast = 1.5; // Adjust this value to increase/decrease contrast
-        const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
-        const value = factor * (avg - 128) + 128;
-
-        // Threshold
-        const threshold = 128;
-        const final = value > threshold ? 255 : 0;
-
-        data[i] = data[i + 1] = data[i + 2] = final;
-      }
-
-      tempCtx.putImageData(imageData, 0, 0);
-
-      // Show preview
-      const previewCanvas = document.getElementById('previewCanvas');
-      previewCanvas.width = cropW;
-      previewCanvas.height = cropH;
-      previewCanvas.getContext('2d').drawImage(tempCanvas, 0, 0);
-
-      overlayText.textContent = "Procesando...";
-
-      Tesseract.recognize(
-        tempCanvas,
-        'eng',
-        {
-          logger: m => console.log(m),
-          tessedit_char_whitelist: '0123456789.'
-        }
-      ).then(({ data: { text } }) => {
-        const value = parseFloat(text.replace(/[^\d.]/g, ''));
-        if (!isNaN(value)) {
-          const currentLimits = limites[tipo];
-          if (pausedForConfirmation) {
-            overlayText.textContent = "Pausado";
-            return;
-          }
-          if (value < currentLimits.min || value > currentLimits.max) {
-            overlayText.textContent = "Fuera de rango";
-            return;
-          }
-          if (fromTimer && value === lastValue) {
-            overlayText.textContent = "Duplicado";
-            return;
-          }
-          lecturas[chapa-1][tipo].push(value);
-          checkAndChangeType();
-          overlayText.textContent = `${value.toFixed(1)} μ`;
-          lastValue = value;
-        } else {
-          overlayText.textContent = "No detectado";
-        }
-      });
-    }
-
-    // Funciones de actualización de la UI
-    function actualizarStats() {
-      let promedio = resultados[chapa-1][tipo];
-      let desviacion = Math.sqrt(lecturas[chapa-1][tipo].map(x => (x - promedio) ** 2).reduce((a, b) => a + b, 0) / lecturas[chapa-1][tipo].length);
-
-      document.getElementById('lecturas').textContent = `${lecturas[chapa-1][tipo].length}/${cantidadLecturas}`;
-      document.getElementById('promedio').textContent = `${promedio ? promedio.toFixed(1):'-'} μ`;
-      document.getElementById('desviacion').textContent = `±${desviacion ? desviacion.toFixed(1):'-'} μ`;
-
-      listaLecturas.innerHTML = '';
-      lecturas[chapa-1][tipo].forEach((val, idx) => {
-        const li = document.createElement('spam');
-        li.textContent = `${val.toFixed(1)}`;
-        li.classList.add('bg-gray-200', 'px-1', 'py-0.5', 'text-s', 'rounded', 'text-gray-800'); // Tailwind clases para estilo
-        listaLecturas.appendChild(li);
-      });
-    }
-
-    // Funciones de cambio de chapa y tipo
-
-    function showPhaseOverlay(title, message) {
-      const overlay = document.getElementById('phaseOverlay');
-      document.getElementById('overlayTitle').textContent = title;
-      document.getElementById('overlayMessage').textContent = message;
-      
-      const wasTimerActive = timerInterval !== null;
-      if (wasTimerActive) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-        
-        const stopBtn = document.createElement('button');
-        stopBtn.className = 'stop-timer-btn';
-        stopBtn.textContent = '⏹️ Cerrar sin reanudar capturas';
-        stopBtn.onclick = (e) => {
-          e.stopPropagation();
-          hidePhaseOverlay(false);
-        };
-        overlay.appendChild(stopBtn);
-      }
-      
-      overlay.classList.add('active');
-      pausedForConfirmation = true;
-      phaseChangeSound.play();
-      
-      // Almacenar el estado del timer para restaurarlo después
-      overlay.dataset.wasTimerActive = wasTimerActive;
-    }
-
-    function hidePhaseOverlay(restartTimer = true) {
-      const overlay = document.getElementById('phaseOverlay');
-      const wasTimerActive = overlay.dataset.wasTimerActive === 'true';
-      
-      const stopBtn = overlay.querySelector('.stop-timer-btn');
-      if (stopBtn) {
-        overlay.removeChild(stopBtn);
-      }
-      
-      overlay.classList.remove('active');
-      pausedForConfirmation = false;
-      
-      // Solo reiniciar el timer si estaba activo y se solicita reinicio
-      if (wasTimerActive && restartTimer && !timerInterval) {
-        setTimeout(() => toggleTimer(), 100);
-      }
-      
-      delete overlay.dataset.wasTimerActive;
-    }
-
-    function hidePhaseOverlay() {
-      const overlay = document.getElementById('phaseOverlay');
-      overlay.classList.remove('active');
-      pausedForConfirmation = false;
-    }
-
-    function actualizarCantidadLecturas() {
-      const input = document.getElementById('cantidadLecturasInput');
-      cantidadLecturas = parseInt(input.value) || 6;
-      guardarEnCache();
-    }
-
-    function checkAndChangeType(){
-      resultados[chapa-1][tipo] = lecturas[chapa-1][tipo].reduce((a, b) => a + b, 0) / lecturas[chapa-1][tipo].length;
-
-      if (lecturas[chapa-1][tipo].length === cantidadLecturas){
-        if (tipo === 'G'){
-          showPhaseOverlay('Cambio a Base', 'Toque la pantalla para comenzar las mediciones de Base');
-          document.addEventListener('click', function phaseClickHandler() {
-            hidePhaseOverlay();
-            setTipo('B');
-            document.removeEventListener('click', phaseClickHandler);
-          }, { once: true });
-        }else{
-          showPhaseOverlay('Cambio de Chapa', 'Toque la pantalla para comenzar con la siguiente chapa');
-          document.addEventListener('click', function phaseClickHandler() {
-            hidePhaseOverlay();
-            cambiarChapa(1);
-            document.removeEventListener('click', phaseClickHandler);
-          }, { once: true });
-        }
-        guardarEnCache();
-      }
-      actualizarStats();
-    }
-
-    function cambiarChapa(delta) {
-      if (chapa+delta < 1) return; //Limite inferior
-      chapa += delta;
-      document.getElementById('chapa').textContent = chapa;
-
-      // Inicializar el objeto de resultados para la nueva chapa si no existe
-      if (!resultados[chapa-1]) {
-        resultados[chapa-1] = {'G':undefined, 'B':undefined};
-        lecturas[chapa-1] = {'G':[], 'B':[]};
-      }
-
-      // Actualizar la información de tipo y promedio para la chapa actual
-      setTipo('G');
-    }
-
-    function setTipo(nuevoTipo) {
-      tipo = nuevoTipo;
-
-      element = document.getElementById('tipo');
-      if (tipo === 'G'){
-        element.textContent = 'Galvanizado';
-        element.classList.remove('bg-green-100', 'text-green-800');
-        element.classList.add('bg-blue-100', 'text-blue-800');
-      }else{
-        element.textContent = 'Base';
-        element.classList.remove('bg-blue-100', 'text-blue-800');
-        element.classList.add('bg-green-100', 'text-green-800');
-      }
-      actualizarStats();
-    }
-
-
-    actualizarStats();
-
-    cropArea.addEventListener('mousedown', (e) => {
-      // Solo mover si no se está redimensionando (resizer = esquina)
-      if (e.target !== cropArea || e.offsetX > cropArea.clientWidth - 20 && e.offsetY > cropArea.clientHeight - 20) return;
-
-      isDragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      const rect = cropArea.getBoundingClientRect();
-      const containerRect = document.getElementById('video-container').getBoundingClientRect();
-      initialX = rect.left - containerRect.left;
-      initialY = rect.top - containerRect.top;
-      e.preventDefault();
-    });
-
-    document.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-
-      cropArea.style.left = `${initialX + dx}px`;
-      cropArea.style.top = `${initialY + dy}px`;
-    });
-
-    document.addEventListener('mouseup', () => {
-      isDragging = false;
-    });
-
-    widthSlider.addEventListener('input', () => {
-      cropArea.style.width = widthSlider.value + 'px';
-    });
-
-    heightSlider.addEventListener('input', () => {
-      cropArea.style.height = heightSlider.value + 'px';
-    });
-
-    // Controls panel toggle
-    function toggleControls() {
-      const panel = document.getElementById('controlsPanel');
-      const arrow = document.getElementById('controlsArrow');
-      panel.classList.toggle('hidden');
-      arrow.textContent = panel.classList.contains('hidden') ? '▼' : '▲';
-    }
-
-    // Update value displays
-    widthSlider.addEventListener('input', () => {
-      document.getElementById('widthValue').textContent = widthSlider.value + 'px';
-    });
-
-    heightSlider.addEventListener('input', () => {
-      document.getElementById('heightValue').textContent = heightSlider.value + 'px';
-    });
-
-    // Timer controls
-    const timerSlider = document.getElementById('timerSlider');
-    const timerEnabled = document.getElementById('timerEnabled');
-    const soundEnabled = document.getElementById('soundEnabled');
-
-    timerSlider.addEventListener('input', () => {
-      document.getElementById('timerValue').textContent = timerSlider.value + 's';
-    });
-
-    function toggleTimer() {
-      const timerButton = document.getElementById('timerButton');
-      
-      if (!timerInterval) {
-        timerInterval = setInterval(() => {
-          capturarYLeer(true);
-        }, timerSlider.value * 1000);
-        timerButton.style.backgroundColor = '#93c5fd';
-      } else {
-        clearInterval(timerInterval);
-        timerInterval = null;
-        timerButton.style.backgroundColor = '#e5e7eb';
-      }
-    }
-    timerSlider.addEventListener('change', () => {
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-        toggleTimer();
-      }
-    });
-
-    function toggleExperimentalFeature(feature) {
-      if (feature === 'timer') {
-        toggleTimer();
-      } else if (feature === 'sound') {
-        if (soundEnabled.checked) {
-          iniciarDeteccion();
-        } else {
-          detecting = false;
-        }
-      }
-    }
-
-    // Funciones para los nuevos botones
-    function cancelarUltimaMedicion() {
-      if (lecturas[chapa-1][tipo].length > 0) {
-        lecturas[chapa-1][tipo].pop();
-        actualizarStats();
-        //guardarEnCache();
-      }
-    }
-
-    function borrarDatosChapa() {
-      lecturas[chapa-1] = {'G':[], 'B':[]};
-      resultados[chapa-1] = {'G':undefined, 'B':undefined};
-      actualizarStats();
-      guardarEnCache();
-    }
-
-    function confirmarReiniciar() {
-      if (confirm('¿Estás seguro de que quieres borrar todos los datos? Esta acción no se puede deshacer.')) {
-        resultados = [{'G':undefined, 'B':undefined}];
-        lecturas = [{'G':[], 'B':[]}];
-        chapa = 1;
-        localStorage.clear();
-        document.getElementById('chapa').textContent = chapa;
-        setTipo('G');
-      }
-    }
-
-    function exportarCSV() {
-      let csv = 'Chapa,PromGalvanizado,PromBase\n';
-
-      for (let i = 0; i < resultados.length; i++) {
-        csv += `${i+1},${resultados[i]['G']?.toFixed(1) || ''},${resultados[i]['B']?.toFixed(1) || ''}\n`;
-      }
-
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'mediciones.csv';
-      a.click();
-      window.URL.revokeObjectURL(url);
-    }
-
-    // Funciones para el manejo del cache
-    function guardarEnCache() {
-      localStorage.setItem('chapas_data', JSON.stringify({
-        resultados,
-        lecturas,
-        chapa,
-        tipo,
-        cantidadLecturas
-      }));
-    }
-
-    function cargarDeCache() {
-      const data = localStorage.getItem('chapas_data');
-      if (data) {
-        const parsed = JSON.parse(data);
-        resultados = parsed.resultados;
-        lecturas = parsed.lecturas;
-        chapa = parsed.chapa;
-        tipo = parsed.tipo;
-        cantidadLecturas = parsed.cantidadLecturas;
-        document.getElementById('chapa').textContent = chapa;
-        document.getElementById('cantidadLecturasInput').value = cantidadLecturas;
-        setTipo(tipo);
-      }
-    }
-
-    // Cargar datos al iniciar
-    cargarDeCache();
-
-    //Touch event listeners for mobile
-    cropArea.addEventListener('touchstart', (e) => {
-        if (e.target !== cropArea || e.touches[0].offsetX > cropArea.clientWidth - 20 && e.touches[0].offsetY > cropArea.clientHeight - 20) return;
-        isDragging = true;
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-        const rect = cropArea.getBoundingClientRect();
-        const containerRect = document.getElementById('video-container').getBoundingClientRect();
-        initialX = rect.left - containerRect.left;
-        initialY = rect.top - containerRect.top;
-        e.preventDefault();
-    });
-
-    document.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        const dx = e.touches[0].clientX - startX;
-        const dy = e.touches[0].clientY - startY;
-        cropArea.style.left = `${initialX + dx}px`;
-        cropArea.style.top = `${initialY + dy}px`;
-    });
-
-    document.addEventListener('touchend', () => {
-        isDragging = false;
-    });
-
-    ///////////////////////////////////////////SONIDO////////////////////////
-    let audioContext;
-    let analyser;
-    let source;
-    let dataArray;
-    let detecting = false;
-
-    async function iniciarDeteccion() {
-      if (detecting) return;
-
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      source = audioContext.createMediaStreamSource(stream);
-
-      analyser = audioContext.createAnalyser();
-      analyser.fftSize = 2048;
-
-      source.connect(analyser);
-
-      const bufferLength = analyser.frequencyBinCount;
-      dataArray = new Uint8Array(bufferLength);
-
-      detecting = true;
-      detectarPitido();
-    }
-
-    function detectarPitido() {
-      if (!detecting) return;
-
-      analyser.getByteFrequencyData(dataArray);
-
-      // Convertimos frecuencia binaria a Hz
-      const sampleRate = audioContext.sampleRate;
-      const binSize = sampleRate / analyser.fftSize;
-
-      // Ejemplo: buscamos un pico entre 3900 y 4100 Hz
-      const targetMin = Math.floor(3900 / binSize);
-      const targetMax = Math.ceil(4100 / binSize);
-
-      let maxAmp = 0;
-      for (let i = targetMin; i <= targetMax; i++) {
-        if (dataArray[i] > maxAmp) {
-          maxAmp = dataArray[i];
-        }
-      }
-
-      if (maxAmp > 180) { // umbral, se puede calibrar
-        console.log("Pitido detectado, capturando...");
-        capturarYLeer();
-        // evitar capturas múltiples seguidas
-        detecting = false;
-        setTimeout(() => {
-          detecting = true;
-          detectarPitido();
-        }, 3000); // espera 3 segundos para el próximo pitido
-        return;
-      }
-
-      requestAnimationFrame(detectarPitido);
-    }
-
-    function showToast(message) {
-      const toast = document.createElement('div');
-      toast.classList.add('toast');
-      toast.textContent = message;
-      document.body.appendChild(toast);
-
-      setTimeout(() => {
-        toast.classList.add('fade-out');
-        setTimeout(() => {
-          document.body.removeChild(toast);
-        }, 1000);
-      }, 3000);
-    }
-
-    document.addEventListener('keydown', (event) => {
-      if (event.code === 'Space') {
-        capturarYLeer();
-      }
-    });
-  </script>
+  <script src="script.js"></script>
   <script src="app.js"></script>
 </body>
+
 </html>
