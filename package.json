@@ -1,0 +1,23 @@
+{
+  "name": "lectormediciones",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ParisNicolas/OCR-lectorDeMicrometro.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ParisNicolas/OCR-lectorDeMicrometro/issues"
+  },
+  "homepage": "https://github.com/ParisNicolas/OCR-lectorDeMicrometro#readme",
+  "description": "",
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

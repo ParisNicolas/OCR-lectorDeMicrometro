@@ -1,14 +1,14 @@
-const CACHE_NAME = "ocr-cache-v6.4";
+const CACHE_NAME = "ocr-cache-v6.5";
 const urlsToCache = [
   "./",
   "./index.html",
-  "./style.css",
-  "./script.js",
-  "./app.js",
-  "./icon-192.png",
-  "./icon-512.png",
-  "./base.mp3",
-  "./chapa.mp3"
+  "./dist/output.css",
+  "./src/script.js",
+  "./src/app.js",
+  "./assets/icon-192.png",
+  "./assets/icon-512.png",
+  "./assets/base.mp3",
+  "./assets/chapa.mp3"
 ];
 
 self.addEventListener("install", (event) => {
