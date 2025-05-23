@@ -1,10 +1,11 @@
-const CACHE_NAME = "ocr-cache-v6.5";
+const CACHE_NAME = "ocr-cache-v6.6";
 const urlsToCache = [
   "./",
   "./index.html",
   "./dist/output.css",
   "./src/script.js",
   "./src/app.js",
+  "./src/tesseract.min.js",
   "./assets/icon-192.png",
   "./assets/icon-512.png",
   "./assets/base.mp3",
