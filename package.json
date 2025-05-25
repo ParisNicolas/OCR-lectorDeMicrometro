@@ -1,6 +1,6 @@
 {
-  "name": "lectormediciones",
-  "version": "1.0.0",
+  "name": "OCR Camara Web",
+  "version": "6.6.0",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
