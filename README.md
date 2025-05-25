@@ -4,7 +4,6 @@
 
 Este proyecto está diseñado para **asistir en la medición y registro automático de espesores de galvanizado y pintura base en chapas metálicas**, reduciendo errores humanos y acelerando el proceso de control de calidad.
 
----
 
 ## 🎯 Objetivo
 
@@ -44,10 +43,6 @@ El sistema captura automáticamente los valores que aparecen en pantalla en un *
 
 ---
 
-Gracias por el detalle. A continuación te incluyo la sección mejorada para el README con las funcionalidades específicas de los botones adicionales: **cambio de chapa/fase**, **cancelar**, **releer**, y **reiniciar**.
-
----
-
 ## Controles y botones adicionales
 
 ### Botones de cambio de fase y chapa
@@ -60,8 +55,6 @@ Gracias por el detalle. A continuación te incluyo la sección mejorada para el 
 * **Siguiente chapa**
   🆕 Crea un nuevo registro para una nueva chapa.
   Reinicia las capturas, promedio y desviación para ambos tipos de medición.
-
----
 
 ### Botones de control de captura
 
@@ -115,15 +108,6 @@ Puedes usar la app directamente desde el navegador. Es posible **instalarla como
 
 🔗 **[Ir a la demo](https://parisnicolas.github.io/OCR-lectorDeMicrometro)**
 
----
-
-## 🧪 Tecnologías utilizadas
-
-* **Tesseract.js** – Reconocimiento óptico de caracteres.
-* **JavaScript** – Lógica de captura y procesamiento.
-* **HTML/CSS** – Interfaz web.
-* **localStorage** – Persistencia de datos offline.
-* **Web APIs** – Acceso a cámara y eventos del dispositivo.
 
 ---
 
@@ -136,6 +120,16 @@ Todos los datos capturados se pueden exportar en formato `.CSV`, incluyendo:
 | 1     | 5.5                 | 14.5          |
 | 2     | 5.7                 | 15.1          |
 | 3     | 5.8                 | 14.9          |
+
+---
+
+## 🧪 Tecnologías utilizadas
+
+* **Tesseract.js** – Reconocimiento óptico de caracteres.
+* **JavaScript** – Lógica de captura y procesamiento.
+* **HTML/CSS** – Interfaz web.
+* **localStorage** – Persistencia de datos offline.
+* **Web APIs** – Acceso a cámara y eventos del dispositivo.
 
 ---
 
